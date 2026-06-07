@@ -193,6 +193,36 @@ function snapshot(c) {
   return { idx: i, date: c.date[i], price: c.price[i], values, scores, overall, ...zoneOf(overall) };
 }
 
-const Indicators = { parseCSV, appendToday, computeAll, snapshot, INDICES, zoneOf, sma };
+/* overall weighted buy-score for every day (NaN until all indices available) */
+function scoreSeries(c) {
+  const keys = INDICES.map((s) => s.key), tw = INDICES.reduce((a, s) => a + s.weight, 0);
+  const out = new Array(c.price.length).fill(NaN);
+  for (let i = 0; i < c.price.length; i++)
+    if (keys.every((k) => Number.isFinite(c[k][i])))
+      out[i] = INDICES.reduce((a, s) => a + s.score(c[s.key][i]) * s.weight, 0) / tw;
+  return out;
+}
+
+const BT_BANDS = [[75, "STRONG BUY"], [55, "ACCUMULATE"], [40, "NEUTRAL"], [25, "CAUTION"], [0, "EXPENSIVE"]];
+
+/* forward-return backtest: for each past day bucket by score zone, measure price
+   change `horizon` days later. Returns per-zone {n, median, win%}. */
+function backtest(c, scores, horizon) {
+  const agg = {}; BT_BANDS.forEach((b) => (agg[b[1]] = []));
+  const N = c.price.length;
+  for (let i = 0; i < N - horizon; i++) {
+    const s = scores[i];
+    if (!Number.isFinite(s)) continue;
+    const p0 = c.price[i], p1 = c.price[i + horizon];
+    if (!(p0 > 0) || !(p1 > 0)) continue;
+    agg[BT_BANDS.find((b) => s >= b[0])[1]].push(p1 / p0 - 1);
+  }
+  return BT_BANDS.map((b) => {
+    const r = agg[b[1]].sort((x, y) => x - y), n = r.length;
+    return { zone: b[1], n, median: n ? r[Math.floor(n / 2)] : NaN, win: n ? r.filter((x) => x > 0).length / n : NaN };
+  });
+}
+
+const Indicators = { parseCSV, appendToday, computeAll, snapshot, scoreSeries, backtest, INDICES, zoneOf, sma };
 if (typeof module !== "undefined" && module.exports) module.exports = Indicators;
 if (typeof window !== "undefined") window.Indicators = Indicators;
