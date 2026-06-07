@@ -70,6 +70,12 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);line
 .scale .seg{flex:1;text-align:center;font-family:var(--mono);font-size:9px;color:var(--faint);padding-top:6px;border-top:3px solid var(--line);transition:.2s}
 .scale .seg.on{color:var(--ink);font-weight:700}
 
+.layers{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px}
+.layers .cell{border:1px solid var(--line);padding:11px 9px;text-align:center}
+.layers .cell .k{font-family:var(--mono);font-size:9px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em}
+.layers .cell .v{font-family:var(--display);font-weight:800;font-size:19px;margin-top:5px;line-height:1.1}
+.layers .cell .vs{font-family:var(--mono);font-size:9.5px;margin-top:4px;color:var(--muted);line-height:1.3}
+
 .summary{display:grid;gap:9px;margin:20px 0 4px}
 .summary div{display:flex;align-items:baseline;justify-content:space-between;gap:14px;border-bottom:1px dashed var(--line-soft);padding-bottom:8px}
 .summary span{font-size:13px;color:var(--muted)}
@@ -167,10 +173,14 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);line
     <div class="scale" id="scale"></div>
   </section>
 
+  <div class="layers" id="layers"></div>
+
   <div class="summary">
     <div><span id="s-price-l"></span><b id="s-price">—</b></div>
     <div><span id="s-val-l"></span><b id="s-val">—</b></div>
     <div><span id="s-mom-l"></span><b id="s-mom">—</b></div>
+    <div id="s-rp-wrap" hidden><span id="s-rp-l"></span><b id="s-rp">—</b></div>
+    <div id="s-nupl-wrap" hidden><span id="s-nupl-l"></span><b id="s-nupl">—</b></div>
   </div>
 
   <div class="insight">
@@ -203,7 +213,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);line
 <script src="indicators.js?v=3"></script>
 <script>
 const CSV="https://raw.githubusercontent.com/coinmetrics/data/master/csv/btc.csv";
-let RAW=null,COMP=null,SNAP=null,SCORES=null,ONCHAIN="",ONCHAIN_FRESH="",chart=null,curKey="price",curRange=1460,curH=90,lastT=null;
+let RAW=null,COMP=null,SNAP=null,SCORES=null,FRESH=null,ONCHAIN="",ONCHAIN_FRESH="",chart=null,curKey="price",curRange=1460,curH=90,lastT=null;
 let LANG=localStorage.getItem("lang")||"th";
 
 /* ---------- i18n ---------- */
@@ -235,6 +245,9 @@ const T={
     mayer:"ราคา ÷ 200DMA. <1 = ใต้ค่าเฉลี่ย (ถูก), >2.4 = ร้อนเกิน",
     puell:"รายได้นักขุด เทียบค่าเฉลี่ยปี. <0.5 = miner capitulation (มัก bottom), >4 = top"},
   read:{ahr999:"อ่านคะแนน: ≤0.45 = 100 (ถูกสุด) · ~1.2 = 50 · ≥4 = 0 (แพง)",mvrv_z:"อ่านคะแนน: ≤0 = 100 (bottom) · 7 = 0 (top)",wma_mult:"อ่านคะแนน: ≤1.0× = 100 (แตะพื้น) · ≥3× = 0",pi_ratio:"อ่านคะแนน: ≤0.6 = 100 · 1.0 = 0 (ยอด)",mayer:"อ่านคะแนน: ≤0.8 = 100 · ≥2.4 = 0 (ร้อน)",puell:"อ่านคะแนน: ≤0.5 = 100 (miner bottom) · ≥4 = 0"},
+  valueL:"มูลค่า",riskL:"ความเสี่ยงสั้น",actL:"ทำอะไร",riskW:{low:"ต่ำ",med:"กลาง",high:"สูง"},
+  act:{addStrong:"DCA / เพิ่มไม้",dcaGrad:"DCA ทยอย (ถูกแต่เทรนด์อ่อน)",normal:"DCA ปกติ / รอ",hold:"ถือ · ลดไม้ใหม่",reduce:"ลด · เลี่ยง leverage"},
+  rpL:"Realized price (ต้นทุนเฉลี่ย)",nuplL:"NUPL (เซนทิเมนต์)",
  },
  en:{
   sub:"Should you accumulate now? · on-chain tier S/A",
@@ -263,6 +276,9 @@ const T={
     mayer:"Price ÷ 200DMA. <1 = below average (cheap), >2.4 = overheated",
     puell:"Miner revenue vs yearly average. <0.5 = miner capitulation (often a bottom), >4 = top"},
   read:{ahr999:"Score: ≤0.45 = 100 (cheapest) · ~1.2 = 50 · ≥4 = 0 (expensive)",mvrv_z:"Score: ≤0 = 100 (bottom) · 7 = 0 (top)",wma_mult:"Score: ≤1.0× = 100 (floor) · ≥3× = 0",pi_ratio:"Score: ≤0.6 = 100 · 1.0 = 0 (top)",mayer:"Score: ≤0.8 = 100 · ≥2.4 = 0 (hot)",puell:"Score: ≤0.5 = 100 (miner bottom) · ≥4 = 0"},
+  valueL:"VALUE",riskL:"RISK (short)",actL:"ACTION",riskW:{low:"Low",med:"Medium",high:"High"},
+  act:{addStrong:"DCA / add",dcaGrad:"DCA gradually (cheap, weak trend)",normal:"Normal DCA / wait",hold:"Hold · trim adds",reduce:"Reduce · avoid leverage"},
+  rpL:"Realized price (cost basis)",nuplL:"NUPL (sentiment)",
  }
 };
 const L=()=>T[LANG];
@@ -282,21 +298,34 @@ const hx=k=>ZHEX[k][DARK()?1:0];
 const scoreVar=s=>`var(--z-${band(s)})`;
 const inkHex=()=>DARK()?"#e9e7e1":"#171715";
 const btcHex=()=>DARK()?"#f7931a":"#c96b08";
+const nuplPhase=v=>v<0?"Capitulation":v<0.25?"Hope/Fear":v<0.5?"Optimism":v<0.75?"Belief/Denial":"Euphoria";
 
 async function ticker(){
   try{const r=await fetch("https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT");const j=await r.json();return{price:+j.lastPrice,chg:+j.priceChangePercent};}catch(e){}
   try{const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true");const j=await r.json();return{price:j.bitcoin.usd,chg:j.bitcoin.usd_24h_change};}catch(e){return null;}
 }
-async function onchainFresh(){
-  try{const[m,p]=await Promise.all([fetch("https://bitcoin-data.com/v1/mvrv-zscore/last").then(r=>r.json()),fetch("https://bitcoin-data.com/v1/puell-multiple/last").then(r=>r.json())]);
-    return{mvrv:+m.mvrvZscore,puell:+p.puellMultiple,date:m.d||p.d};}catch(e){return null;}
+/* Data: slim data.json (built daily by GitHub Action — bakes in fresh bitcoin-data
+   metrics so the browser never hits their 10 req/hr limit). Fallback: Coin Metrics CSV. */
+async function getRaw(){
+  try{
+    const r=await fetch("data.json");if(!r.ok)throw 0;
+    const j=await r.json(),fix=a=>a.map(v=>v===null?NaN:v);
+    RAW={date:j.date,price:fix(j.price),mcap:fix(j.mcap),mvrv:fix(j.mvrv),issUsd:fix(j.issUsd),issNtv:fix(j.issNtv),supply:fix(j.supply)};
+    FRESH=j.fresh||null;
+  }catch(e){
+    const r=await fetch(CSV);if(!r.ok)throw new Error("CSV "+r.status);
+    RAW=Indicators.parseCSV(await r.text());FRESH=null;
+  }
+  ONCHAIN=RAW.date[RAW.date.length-1];
 }
-async function load(){const r=await fetch(CSV);if(!r.ok)throw new Error("CSV "+r.status);
-  RAW=Indicators.parseCSV(await r.text());ONCHAIN=RAW.date[RAW.date.length-1];await recompute();}
+async function load(){await getRaw();await recompute();}
 async function recompute(){
-  const[t,bd]=await Promise.all([ticker(),onchainFresh()]);lastT=t;const px=t?t.price:null;
+  const t=await ticker();lastT=t;const px=t?t.price:null;
   const data=px?Indicators.appendToday(RAW,px):{...RAW};COMP=Indicators.computeAll(data);ONCHAIN_FRESH="";
-  if(bd){const li=COMP.price.length-1;if(Number.isFinite(bd.mvrv))COMP.mvrv_z[li]=bd.mvrv;if(Number.isFinite(bd.puell))COMP.puell[li]=bd.puell;ONCHAIN_FRESH=bd.date;}
+  if(FRESH){const li=COMP.price.length-1;
+    if(Number.isFinite(FRESH.mvrv))COMP.mvrv_z[li]=FRESH.mvrv;
+    if(Number.isFinite(FRESH.puell))COMP.puell[li]=FRESH.puell;
+    if(FRESH.date)ONCHAIN_FRESH=FRESH.date;}
   SCORES=Indicators.scoreSeries(COMP);SNAP=Indicators.snapshot(COMP);render(t);
 }
 
@@ -360,6 +389,18 @@ function render(t){
   document.getElementById("s-price").textContent="$"+Math.round(SNAP.price).toLocaleString("en-US")+(t&&Number.isFinite(t.chg)?`  ${t.chg>=0?"+":"−"}${Math.abs(t.chg).toFixed(1)}%`:"");
   const sv=document.getElementById("s-val");sv.textContent=l.val(SNAP.overall);sv.style.color=scoreVar(SNAP.overall);
   const sm=document.getElementById("s-mom");sm.textContent=l.mom(up);sm.style.color=up?"var(--z-good)":"var(--z-warn)";
+  // realized price + NUPL (baked into data.json by the daily Action; shown only if present)
+  const rpW=document.getElementById("s-rp-wrap"),nuW=document.getElementById("s-nupl-wrap");
+  if(FRESH&&Number.isFinite(FRESH.realizedPrice)){document.getElementById("s-rp-l").textContent=l.rpL;document.getElementById("s-rp").textContent="$"+Math.round(FRESH.realizedPrice).toLocaleString("en-US");rpW.hidden=false;}else rpW.hidden=true;
+  if(FRESH&&Number.isFinite(FRESH.nupl)){document.getElementById("s-nupl-l").textContent=l.nuplL;document.getElementById("s-nupl").textContent=FRESH.nupl.toFixed(2)+" · "+nuplPhase(FRESH.nupl);nuW.hidden=false;}else nuW.hidden=true;
+  // 3-layer Value / Risk / Action
+  const riskKey=(!up&&belowW)?"high":(!up||belowW)?"med":"low";
+  const actText=SNAP.overall>=55?(riskKey==="low"?l.act.addStrong:l.act.dcaGrad):SNAP.overall>=40?l.act.normal:(riskKey==="high"?l.act.reduce:l.act.hold);
+  const riskCol=riskKey==="low"?"var(--z-good)":riskKey==="med"?"var(--z-neutral)":"var(--z-bad)";
+  document.getElementById("layers").innerHTML=
+    `<div class="cell"><div class="k">${l.valueL}</div><div class="v" style="color:${scoreVar(SNAP.overall)}">${SNAP.overall.toFixed(0)}</div><div class="vs">${l.val(SNAP.overall)}</div></div>
+     <div class="cell"><div class="k">${l.riskL}</div><div class="v" style="color:${riskCol}">${l.riskW[riskKey]}</div><div class="vs">${up?"≥200DMA":"<200DMA"}${belowW?" · <200WMA":""}</div></div>
+     <div class="cell"><div class="k">${l.actL}</div><div class="v" style="font-size:13.5px;color:var(--ink)">${actText}</div></div>`;
 
   const zhtml=`<b style="color:${scoreVar(SNAP.overall)}">${l.zone[SNAP.label]}</b>`;
   document.getElementById("ins-what").innerHTML=l.what(zhtml,SNAP.overall.toFixed(0),up,belowW);
@@ -412,7 +453,8 @@ function drawChart(){
   const mk=(la,arr,color,w=1.8,dash=null)=>({label:la,data:arr.slice(start),borderColor:color,borderWidth:w,borderDash:dash||[],pointRadius:0,tension:.2,spanGaps:true,fill:false});
   let datasets=[],logY=false;
   if(curKey==="price"){logY=true;datasets=[mk("BTC",COMP.price,ink,2),mk("200W MA",COMP.ma200w,btcHex(),1.6),mk("200D MA",COMP.ma200,DARK()?"#6c6960":"#a9a9a2",1,[4,4])];
-    const sb=COMP.price.map((p,i)=>SCORES[i]>=75?p:null);datasets.push({label:"STRONG",data:sb.slice(start),borderColor:hx("good"),backgroundColor:hx("good"),showLine:false,pointRadius:1.6,pointHoverRadius:3,spanGaps:false});}
+    const sb=COMP.price.map((p,i)=>SCORES[i]>=75?p:null);datasets.push({label:"STRONG",data:sb.slice(start),borderColor:hx("good"),backgroundColor:hx("good"),showLine:false,pointRadius:1.6,pointHoverRadius:3,spanGaps:false});
+    if(FRESH&&Number.isFinite(FRESH.realizedPrice))datasets.push({label:"Realized",data:labels.map(()=>FRESH.realizedPrice),borderColor:DARK()?"#9b988f":"#9a6a00",borderWidth:1,borderDash:[2,3],pointRadius:0,fill:false});}
   else if(curKey==="score"){datasets=[mk("Buy score",SCORES,ink,2)];[[75,hx("good")],[55,hx("ok")],[40,hx("neutral")],[25,hx("warn")]].forEach(([y,c])=>datasets.push({label:String(y),data:labels.map(()=>y),borderColor:c,borderWidth:1,borderDash:[5,4],pointRadius:0,fill:false}));}
   else if(curKey==="pi_ratio"){logY=true;datasets=[mk("111D",COMP.ma111,ink,1.8),mk("2×350D",COMP.ma350x2,hx("bad"),1.6)];}
   else{const s=Indicators.INDICES.find(x=>x.key===curKey);datasets=[mk(s.title,COMP[curKey],ink,2)];s.bands.forEach(b=>datasets.push({label:b.label,data:labels.map(()=>b.y),borderColor:b.color,borderWidth:1,borderDash:[5,4],pointRadius:0,fill:false}));}

@@ -1,5 +1,5 @@
 /* BTC Accumulation Signal — service worker (offline + fast repeat loads) */
-const CACHE = "btc-accum-v1";
+const CACHE = "btc-accum-v3";
 const SHELL = [
   "./", "./index.html", "./indicators.js?v=3", "./manifest.webmanifest",
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./coin.svg",
@@ -25,7 +25,8 @@ const DATA = /binance\.com|coingecko\.com|bitcoin-data\.com|raw\.githubuserconte
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   const url = e.request.url;
-  if (DATA.test(url)) {
+  // network-first for the HTML shell (so deploys reach installed users) + live data
+  if (e.request.mode === "navigate" || url.endsWith("/index.html") || DATA.test(url) || url.includes("data.json")) {
     e.respondWith(
       fetch(e.request).then((r) => {
         const cp = r.clone();
