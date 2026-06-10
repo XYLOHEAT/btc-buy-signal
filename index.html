@@ -159,6 +159,24 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);line
 .overlay .err{color:var(--z-bad);max-width:280px}
 @media (prefers-reduced-motion: reduce){.gauge .arc,.row .rbar i,body{transition:none}.overlay .lc{animation:none}}
 @media (max-width:360px){.score{font-size:52px}.gauge{width:172px;height:172px}.mast h1{font-size:15px}}
+
+/* ---------- desktop: two-column layout ---------- */
+@media (min-width:960px){
+  .wrap{max-width:1180px;padding-left:44px;padding-right:44px}
+  .mast h1{font-size:20px}
+  .cols{display:grid;grid-template-columns:400px minmax(0,1fr);gap:0 64px;align-items:start;margin-top:4px}
+  .col-a{position:sticky;top:18px;max-height:calc(100dvh - 36px);overflow-y:auto;scrollbar-width:none;padding-right:4px}
+  .col-a::-webkit-scrollbar{display:none}
+  .col-b>.lbl:first-child{margin-top:24px}
+  /* index rows: 2-up grid to use width */
+  .rows{display:grid;grid-template-columns:1fr 1fr;column-gap:44px}
+  .chart-box{height:340px}
+  .hm .m{height:19px}
+  .hm .y,.hm .mh{font-size:10px}
+  .dca-grid,.bt-rows,.cyc-rows{max-width:640px}
+  .bt-note{max-width:640px}
+  .insight p{font-size:14.5px}
+}
 </style>
 </head>
 <body>
@@ -177,6 +195,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);line
     </div>
   </header>
 
+  <div class="cols">
+  <div class="col-a">
   <section class="verdict">
     <div class="gauge">
       <svg class="coin" id="coin" viewBox="0 0 100 100" aria-hidden="true"></svg>
@@ -207,7 +227,9 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);line
     <div class="ins-row"><span id="ins-action-l"></span><b id="ins-dca"></b></div>
     <div class="ins-row"><span id="ins-inval-l"></span><b id="ins-inval"></b></div>
   </div>
+  </div><!-- /col-a -->
 
+  <div class="col-b">
   <div class="lbl" id="lbl-index"></div>
   <div class="rows" id="rows"></div>
 
@@ -245,6 +267,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);line
     <div class="hm" id="hm"></div>
     <div class="bt-note" id="hm-note"></div>
   </section>
+  </div><!-- /col-b -->
+  </div><!-- /cols -->
 
   <footer class="foot" id="foot"></footer>
 </div>
