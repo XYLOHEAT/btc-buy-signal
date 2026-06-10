@@ -129,6 +129,25 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);line
 .bt-row .w{color:var(--muted);text-align:right;min-width:74px}
 .bt-note{font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:13px;line-height:1.65}
 
+/* DCA simulator */
+.dca-grid{display:grid;grid-template-columns:auto 1fr 1fr 1fr;gap:0 10px;border-top:1px solid var(--line);font-family:var(--mono);font-size:12px}
+.dca-grid>div{padding:10px 0;border-bottom:1px solid var(--line-soft)}
+.dca-grid .h{font-size:9.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.04em}
+.dca-grid .r{font-weight:600}
+.dca-grid .num{text-align:right;font-weight:700}
+.dca-grid .win{color:var(--z-good)}
+
+/* cycle compare */
+.cyc-rows{border-top:1px solid var(--line)}
+.cyc-row{padding:11px 0;border-bottom:1px solid var(--line-soft);font-size:13px;font-family:var(--mono);line-height:1.6}
+
+/* heatmap */
+.hm{display:grid;grid-template-columns:auto repeat(12,1fr);gap:2px;margin-top:12px;font-family:var(--mono)}
+.hm .y{font-size:9px;color:var(--faint);align-self:center;padding-right:5px;text-align:right}
+.hm .m{height:15px;border-radius:1px;background:var(--line-soft);position:relative}
+.hm .mh{font-size:8px;color:var(--faint);text-align:center;padding-bottom:2px}
+.hm .hv::after{content:"⛏";position:absolute;inset:0;display:grid;place-items:center;font-size:8px}
+
 .foot{margin-top:32px;padding-top:16px;border-top:1px solid var(--line);font-family:var(--mono);font-size:10px;line-height:1.8;color:var(--faint);letter-spacing:.01em}
 .foot a{color:var(--muted);text-decoration:underline;text-underline-offset:2px}
 
@@ -207,10 +226,30 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);line
     <div class="bt-note" id="bt-note"></div>
   </section>
 
+  <section>
+    <div class="lbl" id="lbl-dca"></div>
+    <div class="bt-h" id="dcaRange"></div>
+    <div class="bt-head" id="dcaHead"></div>
+    <div class="dca-grid" id="dcaGrid"></div>
+    <div class="bt-note" id="dca-note"></div>
+  </section>
+
+  <section>
+    <div class="lbl" id="lbl-cyc"></div>
+    <div class="cyc-rows" id="cycRows"></div>
+    <div class="bt-note" id="cyc-note"></div>
+  </section>
+
+  <section>
+    <div class="lbl" id="lbl-hm"></div>
+    <div class="hm" id="hm"></div>
+    <div class="bt-note" id="hm-note"></div>
+  </section>
+
   <footer class="foot" id="foot"></footer>
 </div>
 
-<script src="indicators.js?v=3"></script>
+<script src="indicators.js?v=4"></script>
 <script>
 const CSV="https://raw.githubusercontent.com/coinmetrics/data/master/csv/btc.csv";
 let RAW=null,COMP=null,SNAP=null,SCORES=null,FRESH=null,ONCHAIN="",ONCHAIN_FRESH="",chart=null,curKey="price",curRange=1460,curH=90,lastT=null;
@@ -248,6 +287,15 @@ const T={
   valueL:"มูลค่า",riskL:"ความเสี่ยงสั้น",actL:"ทำอะไร",riskW:{low:"ต่ำ",med:"กลาง",high:"สูง"},
   act:{addStrong:"DCA / เพิ่มไม้",dcaGrad:"DCA ทยอย (ถูกแต่เทรนด์อ่อน)",normal:"DCA ปกติ / รอ",hold:"ถือ · ลดไม้ใหม่",reduce:"ลด · เลี่ยง leverage"},
   rpL:"Realized price (ต้นทุนเฉลี่ย)",nuplL:"NUPL (เซนทิเมนต์)",
+  secDca:"DCA Simulator · ถ้าทำตาม signal จริง",
+  dcaHead:(e,st)=>`DCA ตาม signal ตั้งแต่ ${st} → ต้นทุนเฉลี่ย<b style="color:var(--z-good)">ถูกกว่า ${e}%</b> เทียบ DCA คงที่`,
+  dcaCols:["","ลงทุนรวม","ได้ BTC","ต้นทุนเฉลี่ย"],dcaFlat:"DCA คงที่",dcaSig:"ตาม signal",
+  dcaNote:"จำลอง: ลงทุนทุก 7 วัน ครั้งละ $100 · ตาม signal ปรับไม้เป็น 0.25–2.5× ตาม score (เกณฑ์เดียวกับช่อง \"แนวทาง\") · เทียบที่ต้นทุนเฉลี่ยต่อ BTC · อดีตไม่การันตีอนาคต",
+  secCyc:"ตอนนี้คล้ายช่วงไหนในอดีต",
+  cycRow:(d,s,f90,f365)=>`<b>${d}</b> <span style="color:var(--muted)">คล้าย ${s}%</span> → 90 วันถัดมา <b>${f90}</b> · 1 ปี <b>${f365}</b>`,
+  cycNote:"เทียบรูปทรง+ระดับของ score 90 วันล่าสุดกับทุกช่วงในอดีต (เว้นปีล่าสุด) · ความคล้ายไม่ใช่เหตุผล ราคาไม่จำเป็นต้องซ้ำรอย",
+  secHm:"Signal heatmap · ค่าเฉลี่ยรายเดือน",
+  hmNote:"สี = โซนเฉลี่ยของเดือน (เขียว = น่าสะสม · แดง = แพง) · ⛏ = halving",
  },
  en:{
   sub:"Should you accumulate now? · on-chain tier S/A",
@@ -279,6 +327,15 @@ const T={
   valueL:"VALUE",riskL:"RISK (short)",actL:"ACTION",riskW:{low:"Low",med:"Medium",high:"High"},
   act:{addStrong:"DCA / add",dcaGrad:"DCA gradually (cheap, weak trend)",normal:"Normal DCA / wait",hold:"Hold · trim adds",reduce:"Reduce · avoid leverage"},
   rpL:"Realized price (cost basis)",nuplL:"NUPL (sentiment)",
+  secDca:"DCA Simulator · if you followed the signal",
+  dcaHead:(e,st)=>`Signal-DCA since ${st} → avg cost <b style="color:var(--z-good)">${e}% cheaper</b> than flat DCA`,
+  dcaCols:["","Invested","BTC stacked","Avg cost"],dcaFlat:"Flat DCA",dcaSig:"Signal DCA",
+  dcaNote:"Simulation: $100 every 7 days · signal version scales each buy 0.25–2.5× by score (same rule as the Action row) · compared on avg cost per BTC · past ≠ future",
+  secCyc:"Which past period looks like now",
+  cycRow:(d,s,f90,f365)=>`<b>${d}</b> <span style="color:var(--muted)">${s}% similar</span> → next 90d <b>${f90}</b> · 1y <b>${f365}</b>`,
+  cycNote:"Matches shape+level of the last 90d of the score vs all history (latest year excluded) · similarity is not causality",
+  secHm:"Signal heatmap · monthly average",
+  hmNote:"Color = the month's average zone (green = accumulate · red = expensive) · ⛏ = halving",
  }
 };
 const L=()=>T[LANG];
@@ -358,6 +415,12 @@ function applyStaticLang(){const l=L();
   document.getElementById("lbl-charts").textContent=l.secCharts;
   document.getElementById("lbl-bt").textContent=l.secBt;
   document.getElementById("bt-note").innerHTML=l.btNote;
+  document.getElementById("lbl-dca").textContent=l.secDca;
+  document.getElementById("dca-note").innerHTML=l.dcaNote;
+  document.getElementById("lbl-cyc").textContent=l.secCyc;
+  document.getElementById("cyc-note").innerHTML=l.cycNote;
+  document.getElementById("lbl-hm").textContent=l.secHm;
+  document.getElementById("hm-note").innerHTML=l.hmNote;
   document.getElementById("foot").innerHTML=l.foot;
   const ov=document.getElementById("ovmsg");if(ov)ov.textContent=l.loading;
   document.getElementById("langBtn").textContent=LANG==="th"?"EN":"ไทย";
@@ -421,7 +484,58 @@ function render(t){
   });
 
   buildTabs();drawChart();buildBtH();renderBacktest();
+  buildDcaRange();renderDca();renderCycle();renderHeatmap();
   document.getElementById("app").hidden=false;document.getElementById("ov").classList.add("gone");
+}
+
+/* ---- DCA simulator ---- */
+let curDcaStart="2020-01-01";
+function buildDcaRange(){const h=document.getElementById("dcaRange");h.innerHTML="";
+  [["2016","2016-01-01"],["2018","2018-01-01"],["2020","2020-01-01"],["2022","2022-01-01"],["ALL",null]].forEach(([la,st])=>{
+    const b=document.createElement("button");b.textContent=la;if(st===curDcaStart)b.className="on";
+    b.onclick=()=>{curDcaStart=st;buildDcaRange();renderDca();};h.appendChild(b);});}
+function renderDca(){
+  const l=L(),r=Indicators.dcaSim(COMP,SCORES,curDcaStart);
+  if(!r){document.getElementById("dcaHead").textContent="";document.getElementById("dcaGrid").innerHTML="";return;}
+  const startLbl=curDcaStart?curDcaStart.slice(0,4):(LANG==="th"?"แรกสุด":"start");
+  document.getElementById("dcaHead").innerHTML=l.dcaHead((r.edge*100).toFixed(1),startLbl);
+  const money=v=>"$"+Math.round(v).toLocaleString("en-US");
+  document.getElementById("dcaGrid").innerHTML=
+    `<div class="h"></div><div class="h num">${l.dcaCols[1]}</div><div class="h num">${l.dcaCols[2]}</div><div class="h num">${l.dcaCols[3]}</div>
+     <div class="r">${l.dcaSig}</div><div class="num">${money(r.invS)}</div><div class="num">${r.btcS.toFixed(4)}</div><div class="num win">${money(r.costS)}</div>
+     <div class="r">${l.dcaFlat}</div><div class="num">${money(r.invF)}</div><div class="num">${r.btcF.toFixed(4)}</div><div class="num">${money(r.costF)}</div>`;
+}
+
+/* ---- cycle compare ---- */
+function renderCycle(){
+  const l=L(),box=document.getElementById("cycRows");box.innerHTML="";
+  const ms=Indicators.cycleMatch(COMP,SCORES);
+  const fp=v=>!Number.isFinite(v)?"—":`<span style="color:${v>=0?"var(--z-good)":"var(--z-bad)"}">${(v>=0?"+":"−")+Math.abs(v*100).toFixed(0)}%</span>`;
+  ms.forEach(m=>{const el=document.createElement("div");el.className="cyc-row";
+    el.innerHTML=l.cycRow(m.date,Math.round(m.sim*100),fp(m.f90),fp(m.f365));box.appendChild(el);});
+}
+
+/* ---- heatmap (monthly average score) ---- */
+const HALVINGS=["2012-11-28","2016-07-09","2020-05-11","2024-04-19"];
+function renderHeatmap(){
+  const hm=document.getElementById("hm");hm.innerHTML="";
+  const agg={};
+  for(let i=0;i<COMP.date.length;i++){const s=SCORES[i];if(!Number.isFinite(s))continue;
+    const ym=COMP.date[i].slice(0,7);(agg[ym]=agg[ym]||[]).push(s);}
+  const yms=Object.keys(agg);if(!yms.length)return;
+  const y0=+yms[0].slice(0,4),y1=+yms[yms.length-1].slice(0,4);
+  const hvYM=new Set(HALVINGS.map(d=>d.slice(0,7)));
+  let html='<div class="y"></div>';for(let m=1;m<=12;m++)html+=`<div class="mh">${m}</div>`;
+  for(let y=y1;y>=y0;y--){
+    html+=`<div class="y">${y}</div>`;
+    for(let m=1;m<=12;m++){
+      const ym=y+"-"+String(m).padStart(2,"0"),a=agg[ym];
+      if(!a){html+='<div class="m"></div>';continue;}
+      const avg=a.reduce((x,v)=>x+v,0)/a.length;
+      html+=`<div class="m${hvYM.has(ym)?" hv":""}" style="background:${hx(band(avg))}" title="${ym} · ${avg.toFixed(0)}"></div>`;
+    }
+  }
+  hm.innerHTML=html;
 }
 function countUp(node,to){const t0=performance.now();
   if(matchMedia("(prefers-reduced-motion: reduce)").matches){node.firstChild.textContent=Math.round(to);return;}
@@ -447,6 +561,21 @@ function buildTabs(){
   const rg=document.getElementById("ranges");rg.innerHTML="";
   [["1Y",365],["4Y",1460],["ALL",99999]].forEach(([la,n])=>{const b=document.createElement("button");b.textContent=la;if(n===curRange)b.className="on";b.onclick=()=>{curRange=n;buildTabs();drawChart();};rg.appendChild(b);});
 }
+/* vertical dashed line + year label at each halving (price/score tabs) */
+const halvingPlugin={id:"hv",afterDatasetsDraw(ch){
+  const xs=ch.scales.x,labels=ch.data.labels;if(!xs||!labels||!labels.length)return;
+  const ctx=ch.ctx,faint=DARK()?"#6c6960":"#a9a9a2";ctx.save();
+  for(const d of HALVINGS){
+    if(d<labels[0]||d>labels[labels.length-1])continue;
+    let lo=0,hi=labels.length-1;while(lo<hi){const mid=(lo+hi)>>1;if(labels[mid]<d)lo=mid+1;else hi=mid;}
+    const x=xs.getPixelForValue(lo);
+    ctx.strokeStyle=faint;ctx.lineWidth=1;ctx.setLineDash([3,4]);
+    ctx.beginPath();ctx.moveTo(x,ch.chartArea.top);ctx.lineTo(x,ch.chartArea.bottom);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=faint;ctx.font="9px 'JetBrains Mono'";ctx.fillText("⛏"+d.slice(2,4),x+3,ch.chartArea.top+10);
+  }
+  ctx.restore();
+}};
+
 function drawChart(){
   const N=COMP.date.length,start=Math.max(0,N-curRange),labels=COMP.date.slice(start),ink=inkHex();
   const grid={color:DARK()?"rgba(255,255,255,.07)":"rgba(20,20,16,.07)"},ticks={color:DARK()?"#6c6960":"#8a8a83",font:{size:10,family:"JetBrains Mono"},maxTicksLimit:5};
@@ -461,7 +590,8 @@ function drawChart(){
   if(chart)chart.destroy();
   chart=new Chart(document.getElementById("chart"),{type:"line",data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,animation:{duration:matchMedia("(prefers-reduced-motion: reduce)").matches?0:500},interaction:{mode:"index",intersect:false},
     plugins:{legend:{display:datasets.length>1,labels:{color:DARK()?"#9b988f":"#5f5f5a",font:{size:10,family:"JetBrains Mono"},boxWidth:14,boxHeight:1,usePointStyle:false}},tooltip:{backgroundColor:DARK()?"#16181c":"#171715",titleColor:"#fafaf8",bodyColor:"#d8d8d2",borderColor:DARK()?"rgba(255,255,255,.12)":"transparent",borderWidth:1,cornerRadius:0,padding:9,titleFont:{family:"JetBrains Mono",size:11},bodyFont:{family:"JetBrains Mono",size:11},displayColors:false}},
-    scales:{x:{grid,ticks:{...ticks,maxTicksLimit:4},border:{color:DARK()?"rgba(255,255,255,.13)":"rgba(20,20,16,.14)"}},y:{type:logY?"logarithmic":"linear",grid,ticks,position:"right",border:{display:false}}}}});
+    scales:{x:{grid,ticks:{...ticks,maxTicksLimit:4},border:{color:DARK()?"rgba(255,255,255,.13)":"rgba(20,20,16,.14)"}},y:{type:logY?"logarithmic":"linear",grid,ticks,position:"right",border:{display:false}}}},
+    plugins:(curKey==="price"||curKey==="score")?[halvingPlugin]:[]});
 }
 
 /* ---------- init ---------- */

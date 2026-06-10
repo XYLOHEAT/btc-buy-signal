@@ -223,6 +223,58 @@ function backtest(c, scores, horizon) {
   });
 }
 
-const Indicators = { parseCSV, appendToday, computeAll, snapshot, scoreSeries, backtest, INDICES, zoneOf, sma };
+/* DCA simulator: flat $base every `every` days vs signal-scaled DCA.
+   Multiplier mirrors the UI stance: 75+ → 2.5x, 55+ → 1.5x, 40+ → 1x,
+   25+ → 0.5x, else 0.25x. Fair comparison = avg cost per BTC, not total BTC. */
+function dcaSim(c, scores, startDate, every = 7, base = 100) {
+  let i0 = 0;
+  if (startDate) { i0 = c.date.findIndex((d) => d >= startDate); if (i0 < 0) i0 = 0; }
+  let invF = 0, btcF = 0, invS = 0, btcS = 0, n = 0;
+  for (let i = i0; i < c.price.length; i += every) {
+    const s = scores[i], p = c.price[i];
+    if (!Number.isFinite(s) || !(p > 0)) continue;
+    const mult = s >= 75 ? 2.5 : s >= 55 ? 1.5 : s >= 40 ? 1 : s >= 25 ? 0.5 : 0.25;
+    invF += base; btcF += base / p;
+    invS += base * mult; btcS += (base * mult) / p;
+    n++;
+  }
+  if (!btcF || !btcS) return null;
+  const costF = invF / btcF, costS = invS / btcS;
+  return { n, invF, btcF, invS, btcS, costF, costS, edge: (costF - costS) / costF };
+}
+
+/* Cycle similarity: compare the last `win` days of the score series against
+   every historical window ≥1y back. Similarity blends shape (Pearson corr)
+   with level closeness so a same-shape-but-opposite-zone window doesn't match. */
+function cycleMatch(c, scores, win = 90, topK = 3) {
+  const N = scores.length, cur = scores.slice(N - win);
+  if (cur.some((v) => !Number.isFinite(v))) return [];
+  const mean = (a) => a.reduce((x, y) => x + y, 0) / a.length;
+  const mC = mean(cur), sdC = Math.sqrt(mean(cur.map((v) => (v - mC) ** 2)));
+  const cand = [];
+  for (let end = win; end <= N - 365; end += 3) {
+    const w = scores.slice(end - win, end);
+    if (w.some((v) => !Number.isFinite(v))) continue;
+    const mW = mean(w), sdW = Math.sqrt(mean(w.map((v) => (v - mW) ** 2)));
+    if (!(sdW > 0 && sdC > 0)) continue;
+    let cov = 0; for (let j = 0; j < win; j++) cov += (cur[j] - mC) * (w[j] - mW);
+    const corr = cov / win / (sdC * sdW);
+    const lvl = 1 - Math.min(1, Math.abs(mC - mW) / 50); // 0..1 closeness of zone level
+    cand.push({ end, sim: 0.6 * corr + 0.4 * (2 * lvl - 1) });
+  }
+  cand.sort((a, b) => b.sim - a.sim);
+  const picked = [];
+  for (const m of cand) {
+    if (picked.some((p) => Math.abs(p.end - m.end) < 180)) continue; // cluster dedupe
+    const i = m.end - 1, p0 = c.price[i];
+    picked.push({ end: m.end, date: c.date[i], sim: m.sim,
+      f90: i + 90 < N ? c.price[i + 90] / p0 - 1 : NaN,
+      f365: i + 365 < N ? c.price[i + 365] / p0 - 1 : NaN });
+    if (picked.length >= topK) break;
+  }
+  return picked;
+}
+
+const Indicators = { parseCSV, appendToday, computeAll, snapshot, scoreSeries, backtest, dcaSim, cycleMatch, INDICES, zoneOf, sma };
 if (typeof module !== "undefined" && module.exports) module.exports = Indicators;
 if (typeof window !== "undefined") window.Indicators = Indicators;
