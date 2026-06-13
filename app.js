@@ -1,0 +1,354 @@
+const CSV="https://raw.githubusercontent.com/coinmetrics/data/master/csv/btc.csv";
+let RAW=null,COMP=null,SNAP=null,SCORES=null,FRESH=null,ONCHAIN="",ONCHAIN_FRESH="",chart=null,curKey="price",curRange=1460,curH=90,lastT=null;
+let LANG=localStorage.getItem("lang")||"th";
+
+/* ---------- i18n ---------- */
+const T={
+ th:{
+  sub:"ตอนนี้ควรสะสมไหม? · on-chain tier S/A",
+  priceL:"ราคา BTC", valL:"Valuation (on-chain)", momL:"โมเมนตัมระยะสั้น",
+  secIndex:"Index breakdown", secCharts:"Charts", secBt:"Backtest · ผลตอบแทนหลังสัญญาณ",
+  action:"แนวทาง", invalidLbl:"สัญญาณเสียเมื่อ",
+  scale:["แพง","ระวัง","กลาง","สะสม","สะสมมาก"],
+  zone:{"STRONG BUY":"น่าสะสมมาก","ACCUMULATE":"ทยอยสะสม / DCA","NEUTRAL":"เป็นกลาง","CAUTION":"ระวัง · ชะลอ","EXPENSIVE":"แพง · ลดสะสม"},
+  val:s=>s>=75?"ถูกมาก · โซนสะสม":s>=55?"ค่อนข้างถูก":s>=40?"กลาง ๆ":s>=25?"ค่อนข้างแพง":"แพง",
+  mom:up=>up?"แข็งแรง (เหนือ 200DMA)":"อ่อนแอ (ใต้ 200DMA)",
+  what:(z,sc,up,bw)=>`BTC อยู่โซน ${z} เชิง valuation on-chain (score ${sc}/100) — โมเมนตัมระยะสั้น${up?"ยังแข็งแรง":"ยังอ่อนแอ"}${bw?" และราคาต่ำกว่า 200W MA (เทรนด์ยาวยังไม่ยืนยัน)":""}.`,
+  dca:s=>s>=75?"เพิ่ม DCA หนักขึ้น (เช่น 2–3× แผนปกติ) · เก็บ dry powder ไว้บ้างเสมอ ไม่ all-in":s>=55?"DCA เพิ่มเล็กน้อย (~1.5–2× แผนปกติ)":s>=40?"DCA ปกติตามแผน":s>=25?"DCA น้อยลง · รอจังหวะ":"ชะลอสะสม · เลี่ยง leverage",
+  inval:w=>`ราคาหลุด 200W MA ($${w}) ต่อเนื่อง หรือ MVRV-Z พุ่งเข้าโซน top`,
+  priceLive:n=>`<span class="dot"></span>ราคา LIVE ${n} · Binance`, priceOff:"ราคา OFFLINE",
+  onchain:(d,days)=>`on-chain ${d} · ${days<=1?"วันนี้":days+" วันก่อน"}`, stale:` <span class="stale">⚠ เก่า</span>`,
+  btHead:(z,m,h,n,w)=>`โซนตอนนี้ ${z} → ในอดีต median <b>${m}</b> ใน ${h} วัน <span>(${n} ครั้ง · ชนะ ${w}%)</span>`,
+  btWin:(w,n)=>`ชนะ ${w}% · n=${n}`, btN0:"n=0",
+  btNote:"ย้อนหลังเต็มประวัติ (2010+) · median = ผลตอบแทนกลางหลังเกิดสัญญาณ · overlapping windows + ตลาดขาขึ้นยุคแรกดันค่าสูง · n น้อย = ไม่น่าเชื่อถือ · ไม่ใช่การรับประกัน",
+  loading:"ดึงข้อมูล on-chain…", err:m=>`โหลดข้อมูลไม่ได้: ${m}<br>เช็คเน็ตแล้วรีเฟรช`,
+  foot:`MVRV/PUELL ปัจจุบัน: <a href="https://bitcoin-data.com" target="_blank" rel="noopener">BITCOIN-DATA.COM</a> · HISTORY: <a href="https://github.com/coinmetrics/data" target="_blank" rel="noopener">COIN METRICS</a> <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a> · PRICE: BINANCE / COINGECKO<br>ใช้ส่วนตัว ไม่เชิงพาณิชย์ · ไม่ใช่คำแนะนำลงทุน · เครื่องมือดูจังหวะสะสม ไม่ใช่สัญญาณซื้อทันที`,
+  status:{ahr999:v=>v<0.45?"ถูกมาก":v<=1.2?"DCA zone":"แพง",mvrv_z:v=>v<0.1?"bottom":v<5?"กลาง":"top zone",wma_mult:v=>v<=1.05?"แตะ 200WMA!":v<3?"ปกติ":"ร้อน",pi_ratio:v=>v<0.7?"ไกล top":v>=0.95?"ใกล้ top!":"กลาง",mayer:v=>v<1?"ถูก":v<2.4?"ปกติ":"ร้อน",puell:v=>v<0.5?"miner bottom":v<4?"ปกติ":"top"},
+  metric:{ahr999:"ดัชนี DCA — เทียบราคากับต้นทุนเฉลี่ย 200 วัน × เส้น fair value. ต่ำ = ถูกเชิงสะสม. ระวัง: อิงราคาล้วน",
+    mvrv_z:"market cap เทียบ realized cap (z-score). <0 = ขาดทุนรวม (bottom), >7 = euphoria (top). แม่นรอบใหญ่",
+    wma_mult:"ราคา ÷ ค่าเฉลี่ย 200 สัปดาห์. ≈1 = แตะพื้นรอบ (จุดสะสมทุกรอบ). หลุดต่อเนื่อง = เทรนด์ยาวเปลี่ยน",
+    pi_ratio:"Pi Cycle — 111DMA เทียบ 2×350DMA. ใกล้ 1 = ใกล้ยอด. ใช้จับ top เป็นหลัก",
+    mayer:"ราคา ÷ 200DMA. <1 = ใต้ค่าเฉลี่ย (ถูก), >2.4 = ร้อนเกิน",
+    puell:"รายได้นักขุด เทียบค่าเฉลี่ยปี. <0.5 = miner capitulation (มัก bottom), >4 = top"},
+  read:{ahr999:"อ่านคะแนน: ≤0.45 = 100 (ถูกสุด) · ~1.2 = 50 · ≥4 = 0 (แพง)",mvrv_z:"อ่านคะแนน: ≤0 = 100 (bottom) · 7 = 0 (top)",wma_mult:"อ่านคะแนน: ≤1.0× = 100 (แตะพื้น) · ≥3× = 0",pi_ratio:"อ่านคะแนน: ≤0.6 = 100 · 1.0 = 0 (ยอด)",mayer:"อ่านคะแนน: ≤0.8 = 100 · ≥2.4 = 0 (ร้อน)",puell:"อ่านคะแนน: ≤0.5 = 100 (miner bottom) · ≥4 = 0"},
+  valueL:"มูลค่า",riskL:"ความเสี่ยงสั้น",actL:"ทำอะไร",riskW:{low:"ต่ำ",med:"กลาง",high:"สูง"},
+  act:{addStrong:"DCA / เพิ่มไม้",dcaGrad:"DCA ทยอย (ถูกแต่เทรนด์อ่อน)",normal:"DCA ปกติ / รอ",hold:"ถือ · ลดไม้ใหม่",reduce:"ลด · เลี่ยง leverage"},
+  rpL:"Realized price (ต้นทุนเฉลี่ย)",nuplL:"NUPL (เซนทิเมนต์)",
+  secDca:"DCA Simulator · ถ้าทำตาม signal จริง",
+  dcaHead:(e,st)=>`DCA ตาม signal ตั้งแต่ ${st} → ต้นทุนเฉลี่ย<b style="color:var(--z-good)">ถูกกว่า ${e}%</b> เทียบ DCA คงที่`,
+  dcaCols:["","ลงทุนรวม","ได้ BTC","ต้นทุนเฉลี่ย"],dcaFlat:"DCA คงที่",dcaSig:"ตาม signal",
+  dcaNote:"จำลอง: ลงทุนทุก 7 วัน ครั้งละ $100 · ตาม signal ปรับไม้เป็น 0.25–2.5× ตาม score (เกณฑ์เดียวกับช่อง \"แนวทาง\") · เทียบที่ต้นทุนเฉลี่ยต่อ BTC · อดีตไม่การันตีอนาคต",
+  secCyc:"ตอนนี้คล้ายช่วงไหนในอดีต",
+  cycRow:(d,s,f90,f365)=>`<b>${d}</b> <span style="color:var(--muted)">คล้าย ${s}%</span> → 90 วันถัดมา <b>${f90}</b> · 1 ปี <b>${f365}</b>`,
+  cycNote:"เทียบรูปทรง+ระดับของ score 90 วันล่าสุดกับทุกช่วงในอดีต (เว้นปีล่าสุด) · ความคล้ายไม่ใช่เหตุผล ราคาไม่จำเป็นต้องซ้ำรอย",
+  secHm:"Signal heatmap · ค่าเฉลี่ยรายเดือน",
+  hmNote:"สี = โซนเฉลี่ยของเดือน (เขียว = น่าสะสม · แดง = แพง) · ⛏ = halving",
+ },
+ en:{
+  sub:"Should you accumulate now? · on-chain tier S/A",
+  priceL:"BTC price", valL:"Valuation (on-chain)", momL:"Short-term momentum",
+  secIndex:"Index breakdown", secCharts:"Charts", secBt:"Backtest · forward return",
+  action:"Action", invalidLbl:"Invalidated if",
+  scale:["Expensive","Caution","Neutral","Accumulate","Strong"],
+  zone:{"STRONG BUY":"Strong accumulation","ACCUMULATE":"Accumulate / DCA","NEUTRAL":"Neutral","CAUTION":"Caution · slow down","EXPENSIVE":"Expensive · reduce"},
+  val:s=>s>=75?"Very cheap · accumulation":s>=55?"Fairly cheap":s>=40?"Mid":s>=25?"Fairly expensive":"Expensive",
+  mom:up=>up?"Strong (above 200DMA)":"Weak (below 200DMA)",
+  what:(z,sc,up,bw)=>`BTC is in a ${z} zone by on-chain valuation (score ${sc}/100). Short-term momentum is ${up?"still strong":"still weak"}${bw?", and price is below the 200W MA (long-term trend unconfirmed)":""}.`,
+  dca:s=>s>=75?"Increase DCA (e.g. 2–3× your usual) · always keep some dry powder, not all-in":s>=55?"Slightly increase DCA (~1.5–2×)":s>=40?"Normal DCA":s>=25?"Reduce DCA · wait":"Pause accumulation · avoid leverage",
+  inval:w=>`Price loses 200W MA ($${w}) on a sustained basis, or MVRV-Z spikes into top zone`,
+  priceLive:n=>`<span class="dot"></span>Price LIVE ${n} · Binance`, priceOff:"Price OFFLINE",
+  onchain:(d,days)=>`on-chain ${d} · ${days<=1?"today":days+" days ago"}`, stale:` <span class="stale">⚠ stale</span>`,
+  btHead:(z,m,h,n,w)=>`Now in ${z} → historically median <b>${m}</b> over ${h} days <span>(${n}× · ${w}% win)</span>`,
+  btWin:(w,n)=>`${w}% win · n=${n}`, btN0:"n=0",
+  btNote:"Full history (2010+) · median = forward return after the signal · overlapping windows + early bull market inflate it · low n = unreliable · not a guarantee",
+  loading:"Loading on-chain data…", err:m=>`Couldn't load data: ${m}<br>Check connection and refresh`,
+  foot:`CURRENT MVRV/PUELL: <a href="https://bitcoin-data.com" target="_blank" rel="noopener">BITCOIN-DATA.COM</a> · HISTORY: <a href="https://github.com/coinmetrics/data" target="_blank" rel="noopener">COIN METRICS</a> <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a> · PRICE: BINANCE / COINGECKO<br>Personal, non-commercial · not financial advice · accumulation-timing tool, not an instant buy signal`,
+  status:{ahr999:v=>v<0.45?"very cheap":v<=1.2?"DCA zone":"expensive",mvrv_z:v=>v<0.1?"bottom":v<5?"mid":"top zone",wma_mult:v=>v<=1.05?"at 200WMA!":v<3?"normal":"hot",pi_ratio:v=>v<0.7?"far from top":v>=0.95?"near top!":"mid",mayer:v=>v<1?"cheap":v<2.4?"normal":"hot",puell:v=>v<0.5?"miner bottom":v<4?"normal":"top"},
+  metric:{ahr999:"DCA index — price vs 200-day cost basis × fair-value fit. Low = cheap to accumulate. Note: price-only",
+    mvrv_z:"Market cap vs realized cap (z-score). <0 = aggregate loss (bottom), >7 = euphoria (top). Accurate on big cycles",
+    wma_mult:"Price ÷ 200-week MA. ≈1 = cycle floor (a buy zone every past cycle). Sustained break = trend change",
+    pi_ratio:"Pi Cycle — 111DMA vs 2×350DMA. Near 1 = near top. Mainly for tops",
+    mayer:"Price ÷ 200DMA. <1 = below average (cheap), >2.4 = overheated",
+    puell:"Miner revenue vs yearly average. <0.5 = miner capitulation (often a bottom), >4 = top"},
+  read:{ahr999:"Score: ≤0.45 = 100 (cheapest) · ~1.2 = 50 · ≥4 = 0 (expensive)",mvrv_z:"Score: ≤0 = 100 (bottom) · 7 = 0 (top)",wma_mult:"Score: ≤1.0× = 100 (floor) · ≥3× = 0",pi_ratio:"Score: ≤0.6 = 100 · 1.0 = 0 (top)",mayer:"Score: ≤0.8 = 100 · ≥2.4 = 0 (hot)",puell:"Score: ≤0.5 = 100 (miner bottom) · ≥4 = 0"},
+  valueL:"VALUE",riskL:"RISK (short)",actL:"ACTION",riskW:{low:"Low",med:"Medium",high:"High"},
+  act:{addStrong:"DCA / add",dcaGrad:"DCA gradually (cheap, weak trend)",normal:"Normal DCA / wait",hold:"Hold · trim adds",reduce:"Reduce · avoid leverage"},
+  rpL:"Realized price (cost basis)",nuplL:"NUPL (sentiment)",
+  secDca:"DCA Simulator · if you followed the signal",
+  dcaHead:(e,st)=>`Signal-DCA since ${st} → avg cost <b style="color:var(--z-good)">${e}% cheaper</b> than flat DCA`,
+  dcaCols:["","Invested","BTC stacked","Avg cost"],dcaFlat:"Flat DCA",dcaSig:"Signal DCA",
+  dcaNote:"Simulation: $100 every 7 days · signal version scales each buy 0.25–2.5× by score (same rule as the Action row) · compared on avg cost per BTC · past ≠ future",
+  secCyc:"Which past period looks like now",
+  cycRow:(d,s,f90,f365)=>`<b>${d}</b> <span style="color:var(--muted)">${s}% similar</span> → next 90d <b>${f90}</b> · 1y <b>${f365}</b>`,
+  cycNote:"Matches shape+level of the last 90d of the score vs all history (latest year excluded) · similarity is not causality",
+  secHm:"Signal heatmap · monthly average",
+  hmNote:"Color = the month's average zone (green = accumulate · red = expensive) · ⛏ = halving",
+ }
+};
+const L=()=>T[LANG];
+
+/* ---------- theme ---------- */
+const SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.2 17.2L18.6 18.6M18.6 5.4L17.2 6.8M6.8 17.2L5.4 18.6"/></svg>';
+const MOON='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+const DARK=()=>document.documentElement.classList.contains("dk")?true:document.documentElement.classList.contains("lt")?false:matchMedia("(prefers-color-scheme: dark)").matches;
+function applyTheme(mode){const r=document.documentElement;r.classList.remove("dk","lt");if(mode==="dark")r.classList.add("dk");else if(mode==="light")r.classList.add("lt");
+  document.getElementById("themeBtn").innerHTML=DARK()?SUN:MOON;}
+function toggleTheme(){const next=DARK()?"light":"dark";localStorage.setItem("theme",next);applyTheme(next);if(COMP&&SNAP)render(lastT);}
+
+/* ---------- colors ---------- */
+const ZHEX={good:["#1c7a47","#34d399"],ok:["#5f7d12","#a3e635"],neutral:["#9a6a00","#fbbf24"],warn:["#bd5a1a","#fb923c"],bad:["#bb2f24","#f87171"]};
+const band=s=>s>=75?"good":s>=55?"ok":s>=40?"neutral":s>=25?"warn":"bad";
+const hx=k=>ZHEX[k][DARK()?1:0];
+const scoreVar=s=>`var(--z-${band(s)})`;
+const inkHex=()=>DARK()?"#e9e7e1":"#171715";
+const btcHex=()=>DARK()?"#f7931a":"#c96b08";
+const nuplPhase=v=>v<0?"Capitulation":v<0.25?"Hope/Fear":v<0.5?"Optimism":v<0.75?"Belief/Denial":"Euphoria";
+/* escape any data-sourced string before it enters innerHTML (defense-in-depth vs upstream tampering) */
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+async function ticker(){
+  try{const r=await fetch("https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT");const j=await r.json();return{price:+j.lastPrice,chg:+j.priceChangePercent};}catch(e){}
+  try{const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true");const j=await r.json();return{price:j.bitcoin.usd,chg:j.bitcoin.usd_24h_change};}catch(e){return null;}
+}
+/* Data: slim data.json (built daily by GitHub Action — bakes in fresh bitcoin-data
+   metrics so the browser never hits their 10 req/hr limit). Fallback: Coin Metrics CSV. */
+async function getRaw(){
+  try{
+    const r=await fetch("data.json");if(!r.ok)throw 0;
+    const j=await r.json(),fix=a=>a.map(v=>v===null?NaN:v);
+    RAW={date:j.date,price:fix(j.price),mcap:fix(j.mcap),mvrv:fix(j.mvrv),issUsd:fix(j.issUsd),issNtv:fix(j.issNtv),supply:fix(j.supply)};
+    FRESH=j.fresh||null;
+  }catch(e){
+    const r=await fetch(CSV);if(!r.ok)throw new Error("CSV "+r.status);
+    RAW=Indicators.parseCSV(await r.text());FRESH=null;
+  }
+  ONCHAIN=RAW.date[RAW.date.length-1];
+}
+async function load(){await getRaw();await recompute();}
+async function recompute(){
+  const t=await ticker();lastT=t;const px=t?t.price:null;
+  const data=px?Indicators.appendToday(RAW,px):{...RAW};COMP=Indicators.computeAll(data);ONCHAIN_FRESH="";
+  if(FRESH){const li=COMP.price.length-1;
+    if(Number.isFinite(FRESH.mvrv))COMP.mvrv_z[li]=FRESH.mvrv;
+    if(Number.isFinite(FRESH.puell))COMP.puell[li]=FRESH.puell;
+    if(FRESH.date)ONCHAIN_FRESH=FRESH.date;}
+  SCORES=Indicators.scoreSeries(COMP);SNAP=Indicators.snapshot(COMP);render(t);
+}
+
+function coin(zone){
+  const m={"STRONG BUY":{e:"open",mouth:"M34 60 Q50 76 66 60"},"ACCUMULATE":{e:"open",mouth:"M37 60 Q50 71 63 60"},"NEUTRAL":{e:"open",mouth:"M39 64 H61"},"CAUTION":{e:"flat",mouth:"M38 66 Q50 60 62 66"},"EXPENSIVE":{e:"flat",mouth:"M38 68 Q50 58 62 68"}}[zone]||{e:"open",mouth:"M39 64 H61"};
+  const eyes=m.e==="flat"?'<rect x="34" y="45" width="11" height="3.5" rx="1.5"/><rect x="55" y="45" width="11" height="3.5" rx="1.5"/>':'<circle cx="39" cy="46" r="3.6"/><circle cx="61" cy="46" r="3.6"/>';
+  document.getElementById("coin").innerHTML=`<circle cx="50" cy="50" r="45" fill="#f7931a"/><circle cx="50" cy="50" r="45" fill="none" stroke="#171715" stroke-width="3"/><g fill="#171715">${eyes}</g><path d="${m.mouth}" stroke="#171715" stroke-width="3.6" fill="none" stroke-linecap="round"/>`;
+}
+function spark(key,bands){
+  const W=150,H=28,ys=[],xs=[],S=COMP[key],N=S.length,start=Math.max(0,N-365);
+  for(let i=start;i<N;i++){if(Number.isFinite(S[i])){ys.push(S[i]);xs.push(i);}}
+  if(ys.length<2)return"";
+  let lo=Math.min(...ys),hi=Math.max(...ys);for(const b of bands){lo=Math.min(lo,b.y);hi=Math.max(hi,b.y);}
+  const pad=(hi-lo)*.1||1;lo-=pad;hi+=pad;
+  const X=i=>((i-xs[0])/(xs[xs.length-1]-xs[0]))*W,Y=v=>H-((v-lo)/(hi-lo))*H;
+  let d="M"+X(xs[0]).toFixed(1)+" "+Y(ys[0]).toFixed(1);for(let i=1;i<ys.length;i++)d+=" L"+X(xs[i]).toFixed(1)+" "+Y(ys[i]).toFixed(1);
+  let bl="";for(const b of bands){const y=Y(b.y).toFixed(1);bl+=`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="${b.color}" stroke-width="1" stroke-dasharray="2 3" opacity=".55"/>`;}
+  return`<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${bl}<path d="${d}" fill="none" stroke="${inkHex()}" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+}
+
+function applyStaticLang(){const l=L();
+  document.documentElement.lang=LANG;
+  document.getElementById("m-sub").textContent=l.sub;
+  document.getElementById("s-price-l").textContent=l.priceL;
+  document.getElementById("s-val-l").textContent=l.valL;
+  document.getElementById("s-mom-l").textContent=l.momL;
+  document.getElementById("ins-action-l").textContent=l.action;
+  document.getElementById("ins-inval-l").textContent=l.invalidLbl;
+  document.getElementById("lbl-index").textContent=l.secIndex;
+  document.getElementById("lbl-charts").textContent=l.secCharts;
+  document.getElementById("lbl-bt").textContent=l.secBt;
+  document.getElementById("bt-note").innerHTML=l.btNote;
+  document.getElementById("lbl-dca").textContent=l.secDca;
+  document.getElementById("dca-note").innerHTML=l.dcaNote;
+  document.getElementById("lbl-cyc").textContent=l.secCyc;
+  document.getElementById("cyc-note").innerHTML=l.cycNote;
+  document.getElementById("lbl-hm").textContent=l.secHm;
+  document.getElementById("hm-note").innerHTML=l.hmNote;
+  document.getElementById("foot").innerHTML=l.foot;
+  const ov=document.getElementById("ovmsg");if(ov)ov.textContent=l.loading;
+  document.getElementById("langBtn").textContent=LANG==="th"?"EN":"ไทย";
+}
+function setLang(x){LANG=x;localStorage.setItem("lang",x);applyStaticLang();if(COMP&&SNAP)render(lastT);}
+
+const SCALE_K=["bad","warn","neutral","ok","good"];
+function render(t){
+  const l=L(),C=2*Math.PI*88,col=scoreVar(SNAP.overall);
+  const arc=document.getElementById("arc");arc.style.stroke=col;arc.setAttribute("stroke-dasharray",C);arc.setAttribute("stroke-dashoffset",C);
+  requestAnimationFrame(()=>arc.setAttribute("stroke-dashoffset",C*(1-SNAP.overall/100)));
+  const sc=document.getElementById("score");sc.style.color=col;countUp(sc,SNAP.overall);
+  const z=document.getElementById("zone");z.textContent=SNAP.label.replace("STRONG BUY","STRONG ACCUMULATE");z.style.color=col;
+  document.getElementById("zoneth").textContent=l.zone[SNAP.label];
+  coin(SNAP.label);
+
+  document.getElementById("price").textContent="$"+Math.round(SNAP.price).toLocaleString("en-US");
+  const chg=document.getElementById("chg");
+  if(t&&Number.isFinite(t.chg)){chg.className="chg "+(t.chg>=0?"up":"down");chg.textContent=(t.chg>=0?"+":"−")+Math.abs(t.chg).toFixed(2)+"% 24H";}else chg.textContent="";
+  const now=new Date().toLocaleTimeString(LANG==="th"?"th-TH":"en-GB",{hour:"2-digit",minute:"2-digit"});
+  const ocDate=ONCHAIN_FRESH||ONCHAIN,ocDays=Math.round((Date.now()-Date.parse(ocDate+"T00:00:00Z"))/86400000);
+  let line2=l.onchain(esc(ocDate),ocDays);if(ocDays>7)line2+=l.stale;
+  document.getElementById("asof").innerHTML=(t?l.priceLive(now):l.priceOff)+"<br>"+line2;
+
+  const cur=band(SNAP.overall),sl=document.getElementById("scale");sl.innerHTML="";
+  SCALE_K.forEach((k,i)=>{const d=document.createElement("div");d.className="seg"+(k===cur?" on":"");d.textContent=l.scale[i];if(k===cur)d.style.borderTopColor=`var(--z-${k})`;sl.appendChild(d);});
+
+  const up=SNAP.values.mayer>=1,belowW=SNAP.values.wma_mult<1;
+  document.getElementById("s-price").textContent="$"+Math.round(SNAP.price).toLocaleString("en-US")+(t&&Number.isFinite(t.chg)?`  ${t.chg>=0?"+":"−"}${Math.abs(t.chg).toFixed(1)}%`:"");
+  const sv=document.getElementById("s-val");sv.textContent=l.val(SNAP.overall);sv.style.color=scoreVar(SNAP.overall);
+  const sm=document.getElementById("s-mom");sm.textContent=l.mom(up);sm.style.color=up?"var(--z-good)":"var(--z-warn)";
+  // realized price + NUPL (baked into data.json by the daily Action; shown only if present)
+  const rpW=document.getElementById("s-rp-wrap"),nuW=document.getElementById("s-nupl-wrap");
+  if(FRESH&&Number.isFinite(FRESH.realizedPrice)){document.getElementById("s-rp-l").textContent=l.rpL;document.getElementById("s-rp").textContent="$"+Math.round(FRESH.realizedPrice).toLocaleString("en-US");rpW.hidden=false;}else rpW.hidden=true;
+  if(FRESH&&Number.isFinite(FRESH.nupl)){document.getElementById("s-nupl-l").textContent=l.nuplL;document.getElementById("s-nupl").textContent=FRESH.nupl.toFixed(2)+" · "+nuplPhase(FRESH.nupl);nuW.hidden=false;}else nuW.hidden=true;
+  // 3-layer Value / Risk / Action
+  const riskKey=(!up&&belowW)?"high":(!up||belowW)?"med":"low";
+  const actText=SNAP.overall>=55?(riskKey==="low"?l.act.addStrong:l.act.dcaGrad):SNAP.overall>=40?l.act.normal:(riskKey==="high"?l.act.reduce:l.act.hold);
+  const riskCol=riskKey==="low"?"var(--z-good)":riskKey==="med"?"var(--z-neutral)":"var(--z-bad)";
+  document.getElementById("layers").innerHTML=
+    `<div class="cell"><div class="k">${l.valueL}</div><div class="v" style="color:${scoreVar(SNAP.overall)}">${SNAP.overall.toFixed(0)}</div><div class="vs">${l.val(SNAP.overall)}</div></div>
+     <div class="cell"><div class="k">${l.riskL}</div><div class="v" style="color:${riskCol}">${l.riskW[riskKey]}</div><div class="vs">${up?"≥200DMA":"<200DMA"}${belowW?" · <200WMA":""}</div></div>
+     <div class="cell"><div class="k">${l.actL}</div><div class="v" style="font-size:13.5px;color:var(--ink)">${actText}</div></div>`;
+
+  const zhtml=`<b style="color:${scoreVar(SNAP.overall)}">${l.zone[SNAP.label]}</b>`;
+  document.getElementById("ins-what").innerHTML=l.what(zhtml,SNAP.overall.toFixed(0),up,belowW);
+  document.getElementById("ins-dca").textContent=l.dca(SNAP.overall);
+  const w200=COMP.ma200w[SNAP.idx];document.getElementById("ins-inval").textContent=l.inval(w200?Math.round(w200).toLocaleString("en-US"):"—");
+
+  const rows=document.getElementById("rows");rows.innerHTML="";
+  Indicators.INDICES.forEach(s=>{
+    const v=SNAP.values[s.key],score=SNAP.scores[s.key],k=band(score);
+    const el=document.createElement("div");el.className="row";
+    el.innerHTML=`<div class="id"><span class="nm">${s.title}</span><span class="tier ${s.tier}">${s.tier}</span><span class="st" style="color:var(--z-${k})">${l.status[s.key](v)}</span><button class="i" aria-label="info">ⓘ</button></div>
+      <div class="val">${s.fmt(v)}</div>
+      <div class="sparkwrap">${spark(s.key,s.bands)}<span class="sc"><b style="color:var(--z-${k})">${score.toFixed(0)}</b>/100</span></div>
+      <div class="rbar"><i style="background:var(--z-${k})"></i></div>
+      <div class="info">${l.metric[s.key]||""}<span class="rd">${(l.read&&l.read[s.key])||""}</span></div>`;
+    el.querySelector(".i").onclick=()=>el.classList.toggle("open");
+    rows.appendChild(el);requestAnimationFrame(()=>{el.querySelector(".rbar i").style.width=score+"%";});
+  });
+
+  buildTabs();drawChart();buildBtH();renderBacktest();
+  buildDcaRange();renderDca();renderCycle();renderHeatmap();
+  document.getElementById("app").hidden=false;document.getElementById("ov").classList.add("gone");
+}
+
+/* ---- DCA simulator ---- */
+let curDcaStart="2020-01-01";
+function buildDcaRange(){const h=document.getElementById("dcaRange");h.innerHTML="";
+  [["2016","2016-01-01"],["2018","2018-01-01"],["2020","2020-01-01"],["2022","2022-01-01"],["ALL",null]].forEach(([la,st])=>{
+    const b=document.createElement("button");b.textContent=la;if(st===curDcaStart)b.className="on";
+    b.onclick=()=>{curDcaStart=st;buildDcaRange();renderDca();};h.appendChild(b);});}
+function renderDca(){
+  const l=L(),r=Indicators.dcaSim(COMP,SCORES,curDcaStart);
+  if(!r){document.getElementById("dcaHead").textContent="";document.getElementById("dcaGrid").innerHTML="";return;}
+  const startLbl=curDcaStart?curDcaStart.slice(0,4):(LANG==="th"?"แรกสุด":"start");
+  document.getElementById("dcaHead").innerHTML=l.dcaHead((r.edge*100).toFixed(1),startLbl);
+  const money=v=>"$"+Math.round(v).toLocaleString("en-US");
+  document.getElementById("dcaGrid").innerHTML=
+    `<div class="h"></div><div class="h num">${l.dcaCols[1]}</div><div class="h num">${l.dcaCols[2]}</div><div class="h num">${l.dcaCols[3]}</div>
+     <div class="r">${l.dcaSig}</div><div class="num">${money(r.invS)}</div><div class="num">${r.btcS.toFixed(4)}</div><div class="num win">${money(r.costS)}</div>
+     <div class="r">${l.dcaFlat}</div><div class="num">${money(r.invF)}</div><div class="num">${r.btcF.toFixed(4)}</div><div class="num">${money(r.costF)}</div>`;
+}
+
+/* ---- cycle compare ---- */
+function renderCycle(){
+  const l=L(),box=document.getElementById("cycRows");box.innerHTML="";
+  const ms=Indicators.cycleMatch(COMP,SCORES);
+  const fp=v=>!Number.isFinite(v)?"—":`<span style="color:${v>=0?"var(--z-good)":"var(--z-bad)"}">${(v>=0?"+":"−")+Math.abs(v*100).toFixed(0)}%</span>`;
+  ms.forEach(m=>{const el=document.createElement("div");el.className="cyc-row";
+    el.innerHTML=l.cycRow(esc(m.date),Math.round(m.sim*100),fp(m.f90),fp(m.f365));box.appendChild(el);});
+}
+
+/* ---- heatmap (monthly average score) ---- */
+const HALVINGS=["2012-11-28","2016-07-09","2020-05-11","2024-04-19"];
+function renderHeatmap(){
+  const hm=document.getElementById("hm");hm.innerHTML="";
+  const agg={};
+  for(let i=0;i<COMP.date.length;i++){const s=SCORES[i];if(!Number.isFinite(s))continue;
+    const ym=COMP.date[i].slice(0,7);(agg[ym]=agg[ym]||[]).push(s);}
+  const yms=Object.keys(agg);if(!yms.length)return;
+  const y0=+yms[0].slice(0,4),y1=+yms[yms.length-1].slice(0,4);
+  const hvYM=new Set(HALVINGS.map(d=>d.slice(0,7)));
+  let html='<div class="y"></div>';for(let m=1;m<=12;m++)html+=`<div class="mh">${m}</div>`;
+  for(let y=y1;y>=y0;y--){
+    html+=`<div class="y">${y}</div>`;
+    for(let m=1;m<=12;m++){
+      const ym=y+"-"+String(m).padStart(2,"0"),a=agg[ym];
+      if(!a){html+='<div class="m"></div>';continue;}
+      const avg=a.reduce((x,v)=>x+v,0)/a.length;
+      html+=`<div class="m${hvYM.has(ym)?" hv":""}" style="background:${hx(band(avg))}" title="${esc(ym)} · ${avg.toFixed(0)}"></div>`;
+    }
+  }
+  hm.innerHTML=html;
+}
+function countUp(node,to){const t0=performance.now();
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches){node.firstChild.textContent=Math.round(to);return;}
+  (function step(t){const p=Math.min(1,(t-t0)/1000),e=1-Math.pow(1-p,3);node.firstChild.textContent=Math.round(to*e);if(p<1)requestAnimationFrame(step);})(t0);}
+
+const pct=x=>(x>=0?"+":"−")+Math.abs(x*100).toFixed(0)+"%";
+const ZDISP=z=>z.replace("STRONG BUY","STRONG ACCUMULATE");
+function buildBtH(){const h=document.getElementById("bth");h.innerHTML="";
+  [["1M",30],["3M",90],["6M",180],["1Y",365]].forEach(([la,n])=>{const b=document.createElement("button");b.textContent=la;if(n===curH)b.className="on";b.onclick=()=>{curH=n;buildBtH();renderBacktest();};h.appendChild(b);});}
+function renderBacktest(){
+  const l=L(),bt=Indicators.backtest(COMP,SCORES,curH),cur=bt.find(b=>b.zone===SNAP.label);
+  document.getElementById("bthead").innerHTML=(cur&&cur.n)?l.btHead(`<b style="color:${scoreVar(SNAP.overall)}">${ZDISP(SNAP.label)}</b>`,pct(cur.median),curH,cur.n,Math.round(cur.win*100)):"";
+  const box=document.getElementById("bt");box.innerHTML="";
+  bt.forEach(b=>{const k=band(b.zone==="STRONG BUY"?80:b.zone==="ACCUMULATE"?60:b.zone==="NEUTRAL"?45:b.zone==="CAUTION"?30:10);
+    const el=document.createElement("div");el.className="bt-row"+(b.zone===SNAP.label?" on":"");
+    el.innerHTML=`<span class="z" style="color:var(--z-${k})">${ZDISP(b.zone)}</span><span class="m" style="color:${b.n?(b.median>=0?"var(--z-good)":"var(--z-bad)"):"var(--faint)"}">${b.n?pct(b.median):"—"}</span><span class="w">${b.n?l.btWin(Math.round(b.win*100),b.n):l.btN0}</span>`;
+    box.appendChild(el);});
+}
+function buildTabs(){
+  const tabs=document.getElementById("tabs");tabs.innerHTML="";
+  [["price","PRICE"],["score","SCORE"],...Indicators.INDICES.map(s=>[s.key,s.title.replace(" Multiple","").replace(" Top","").replace("-Score","").replace(" Heatmap","").toUpperCase()])]
+    .forEach(([k,la])=>{const b=document.createElement("button");b.textContent=la;if(k===curKey)b.className="on";b.onclick=()=>{curKey=k;buildTabs();drawChart();};tabs.appendChild(b);});
+  const rg=document.getElementById("ranges");rg.innerHTML="";
+  [["1Y",365],["4Y",1460],["ALL",99999]].forEach(([la,n])=>{const b=document.createElement("button");b.textContent=la;if(n===curRange)b.className="on";b.onclick=()=>{curRange=n;buildTabs();drawChart();};rg.appendChild(b);});
+}
+/* vertical dashed line + year label at each halving (price/score tabs) */
+const halvingPlugin={id:"hv",afterDatasetsDraw(ch){
+  const xs=ch.scales.x,labels=ch.data.labels;if(!xs||!labels||!labels.length)return;
+  const ctx=ch.ctx,faint=DARK()?"#6c6960":"#a9a9a2";ctx.save();
+  for(const d of HALVINGS){
+    if(d<labels[0]||d>labels[labels.length-1])continue;
+    let lo=0,hi=labels.length-1;while(lo<hi){const mid=(lo+hi)>>1;if(labels[mid]<d)lo=mid+1;else hi=mid;}
+    const x=xs.getPixelForValue(lo);
+    ctx.strokeStyle=faint;ctx.lineWidth=1;ctx.setLineDash([3,4]);
+    ctx.beginPath();ctx.moveTo(x,ch.chartArea.top);ctx.lineTo(x,ch.chartArea.bottom);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=faint;ctx.font="9px 'JetBrains Mono'";ctx.fillText("⛏"+d.slice(2,4),x+3,ch.chartArea.top+10);
+  }
+  ctx.restore();
+}};
+
+function drawChart(){
+  const N=COMP.date.length,start=Math.max(0,N-curRange),labels=COMP.date.slice(start),ink=inkHex();
+  const grid={color:DARK()?"rgba(255,255,255,.07)":"rgba(20,20,16,.07)"},ticks={color:DARK()?"#6c6960":"#8a8a83",font:{size:10,family:"JetBrains Mono"},maxTicksLimit:5};
+  const mk=(la,arr,color,w=1.8,dash=null)=>({label:la,data:arr.slice(start),borderColor:color,borderWidth:w,borderDash:dash||[],pointRadius:0,tension:.2,spanGaps:true,fill:false});
+  let datasets=[],logY=false;
+  if(curKey==="price"){logY=true;datasets=[mk("BTC",COMP.price,ink,2),mk("200W MA",COMP.ma200w,btcHex(),1.6),mk("200D MA",COMP.ma200,DARK()?"#6c6960":"#a9a9a2",1,[4,4])];
+    const sb=COMP.price.map((p,i)=>SCORES[i]>=75?p:null);datasets.push({label:"STRONG",data:sb.slice(start),borderColor:hx("good"),backgroundColor:hx("good"),showLine:false,pointRadius:1.6,pointHoverRadius:3,spanGaps:false});
+    if(FRESH&&Number.isFinite(FRESH.realizedPrice))datasets.push({label:"Realized",data:labels.map(()=>FRESH.realizedPrice),borderColor:DARK()?"#9b988f":"#9a6a00",borderWidth:1,borderDash:[2,3],pointRadius:0,fill:false});}
+  else if(curKey==="score"){datasets=[mk("Buy score",SCORES,ink,2)];[[75,hx("good")],[55,hx("ok")],[40,hx("neutral")],[25,hx("warn")]].forEach(([y,c])=>datasets.push({label:String(y),data:labels.map(()=>y),borderColor:c,borderWidth:1,borderDash:[5,4],pointRadius:0,fill:false}));}
+  else if(curKey==="pi_ratio"){logY=true;datasets=[mk("111D",COMP.ma111,ink,1.8),mk("2×350D",COMP.ma350x2,hx("bad"),1.6)];}
+  else{const s=Indicators.INDICES.find(x=>x.key===curKey);datasets=[mk(s.title,COMP[curKey],ink,2)];s.bands.forEach(b=>datasets.push({label:b.label,data:labels.map(()=>b.y),borderColor:b.color,borderWidth:1,borderDash:[5,4],pointRadius:0,fill:false}));}
+  if(chart)chart.destroy();
+  chart=new Chart(document.getElementById("chart"),{type:"line",data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,animation:{duration:matchMedia("(prefers-reduced-motion: reduce)").matches?0:500},interaction:{mode:"index",intersect:false},
+    plugins:{legend:{display:datasets.length>1,labels:{color:DARK()?"#9b988f":"#5f5f5a",font:{size:10,family:"JetBrains Mono"},boxWidth:14,boxHeight:1,usePointStyle:false}},tooltip:{backgroundColor:DARK()?"#16181c":"#171715",titleColor:"#fafaf8",bodyColor:"#d8d8d2",borderColor:DARK()?"rgba(255,255,255,.12)":"transparent",borderWidth:1,cornerRadius:0,padding:9,titleFont:{family:"JetBrains Mono",size:11},bodyFont:{family:"JetBrains Mono",size:11},displayColors:false}},
+    scales:{x:{grid,ticks:{...ticks,maxTicksLimit:4},border:{color:DARK()?"rgba(255,255,255,.13)":"rgba(20,20,16,.14)"}},y:{type:logY?"logarithmic":"linear",grid,ticks,position:"right",border:{display:false}}}},
+    plugins:(curKey==="price"||curKey==="score")?[halvingPlugin]:[]});
+}
+
+/* ---------- init ---------- */
+const savedTheme=localStorage.getItem("theme");applyTheme(savedTheme||"auto");
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{if(!localStorage.getItem("theme")){document.getElementById("themeBtn").innerHTML=DARK()?SUN:MOON;if(COMP&&SNAP)render(lastT);}});
+applyStaticLang();
+document.getElementById("themeBtn").onclick=toggleTheme;
+document.getElementById("langBtn").onclick=()=>setLang(LANG==="th"?"en":"th");
+document.getElementById("refresh").onclick=async function(){this.classList.add("busy");try{await recompute();}catch(e){}this.classList.remove("busy");};
+load().catch(e=>{document.getElementById("ovmsg").outerHTML='<p class="err">'+L().err(esc(e.message))+'</p>';});
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
