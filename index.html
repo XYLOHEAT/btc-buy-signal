@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.binance.com https://api.coingecko.com https://raw.githubusercontent.com; base-uri 'self'; object-src 'none'">
 <meta name="theme-color" content="#f3f3f0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0e0f12" media="(prefers-color-scheme: dark)">
 <title>Bitcoin Accumulation Signal</title>
@@ -16,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=JetBrains+Mono:wght@500;600;700&family=Anuphan:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4" crossorigin="anonymous"></script>
 <style>
 :root{
   --bg:#f3f3f0; --surface:#fafaf8; --ink:#171715; --muted:#5f5f5a; --faint:#8a8a83;
@@ -380,6 +381,8 @@ const scoreVar=s=>`var(--z-${band(s)})`;
 const inkHex=()=>DARK()?"#e9e7e1":"#171715";
 const btcHex=()=>DARK()?"#f7931a":"#c96b08";
 const nuplPhase=v=>v<0?"Capitulation":v<0.25?"Hope/Fear":v<0.5?"Optimism":v<0.75?"Belief/Denial":"Euphoria";
+/* escape any data-sourced string before it enters innerHTML (defense-in-depth vs upstream tampering) */
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 async function ticker(){
   try{const r=await fetch("https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT");const j=await r.json();return{price:+j.lastPrice,chg:+j.priceChangePercent};}catch(e){}
@@ -466,7 +469,7 @@ function render(t){
   if(t&&Number.isFinite(t.chg)){chg.className="chg "+(t.chg>=0?"up":"down");chg.textContent=(t.chg>=0?"+":"−")+Math.abs(t.chg).toFixed(2)+"% 24H";}else chg.textContent="";
   const now=new Date().toLocaleTimeString(LANG==="th"?"th-TH":"en-GB",{hour:"2-digit",minute:"2-digit"});
   const ocDate=ONCHAIN_FRESH||ONCHAIN,ocDays=Math.round((Date.now()-Date.parse(ocDate+"T00:00:00Z"))/86400000);
-  let line2=l.onchain(ocDate,ocDays);if(ocDays>7)line2+=l.stale;
+  let line2=l.onchain(esc(ocDate),ocDays);if(ocDays>7)line2+=l.stale;
   document.getElementById("asof").innerHTML=(t?l.priceLive(now):l.priceOff)+"<br>"+line2;
 
   const cur=band(SNAP.overall),sl=document.getElementById("scale");sl.innerHTML="";
@@ -536,7 +539,7 @@ function renderCycle(){
   const ms=Indicators.cycleMatch(COMP,SCORES);
   const fp=v=>!Number.isFinite(v)?"—":`<span style="color:${v>=0?"var(--z-good)":"var(--z-bad)"}">${(v>=0?"+":"−")+Math.abs(v*100).toFixed(0)}%</span>`;
   ms.forEach(m=>{const el=document.createElement("div");el.className="cyc-row";
-    el.innerHTML=l.cycRow(m.date,Math.round(m.sim*100),fp(m.f90),fp(m.f365));box.appendChild(el);});
+    el.innerHTML=l.cycRow(esc(m.date),Math.round(m.sim*100),fp(m.f90),fp(m.f365));box.appendChild(el);});
 }
 
 /* ---- heatmap (monthly average score) ---- */
@@ -556,7 +559,7 @@ function renderHeatmap(){
       const ym=y+"-"+String(m).padStart(2,"0"),a=agg[ym];
       if(!a){html+='<div class="m"></div>';continue;}
       const avg=a.reduce((x,v)=>x+v,0)/a.length;
-      html+=`<div class="m${hvYM.has(ym)?" hv":""}" style="background:${hx(band(avg))}" title="${ym} · ${avg.toFixed(0)}"></div>`;
+      html+=`<div class="m${hvYM.has(ym)?" hv":""}" style="background:${hx(band(avg))}" title="${esc(ym)} · ${avg.toFixed(0)}"></div>`;
     }
   }
   hm.innerHTML=html;
@@ -625,7 +628,7 @@ applyStaticLang();
 document.getElementById("themeBtn").onclick=toggleTheme;
 document.getElementById("langBtn").onclick=()=>setLang(LANG==="th"?"en":"th");
 document.getElementById("refresh").onclick=async function(){this.classList.add("busy");try{await recompute();}catch(e){}this.classList.remove("busy");};
-load().catch(e=>{document.getElementById("ovmsg").outerHTML='<p class="err">'+L().err(e.message)+'</p>';});
+load().catch(e=>{document.getElementById("ovmsg").outerHTML='<p class="err">'+L().err(esc(e.message))+'</p>';});
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
 </body>

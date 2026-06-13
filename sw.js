@@ -1,5 +1,5 @@
 /* BTC Accumulation Signal — service worker (offline + fast repeat loads) */
-const CACHE = "btc-accum-v4";
+const CACHE = "btc-accum-v5";
 const SHELL = [
   "./", "./index.html", "./indicators.js?v=4", "./manifest.webmanifest",
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./coin.svg",

@@ -7,7 +7,9 @@ Run daily by GitHub Actions. Pure stdlib (no pip install needed).
   fetched ONCE per run (well under the 10 req/hour free limit; the web no longer
   hits bitcoin-data per page load, which is what blew the limit).
 """
-import csv, io, json, urllib.request, datetime
+import csv, io, json, re, urllib.request, datetime
+
+DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")  # only ISO dates reach the client (anti-XSS)
 
 CSV_URL = "https://raw.githubusercontent.com/coinmetrics/data/master/csv/btc.csv"
 BD = "https://bitcoin-data.com/v1/"
@@ -29,10 +31,11 @@ def num(s):
 rows = list(csv.DictReader(io.StringIO(fetch(CSV_URL))))
 date, price, mcap, mvrv, issUsd, issNtv, supply = [], [], [], [], [], [], []
 for row in rows:
+    t = (row.get("time") or "").strip()
     p, mc = num(row.get("PriceUSD")), num(row.get("CapMrktCurUSD"))
-    if p is None or mc is None:
+    if p is None or mc is None or not DATE_RE.match(t):
         continue
-    date.append(row["time"])
+    date.append(t)
     price.append(rnd(p, 2)); mcap.append(rnd(mc, 0))
     mvrv.append(rnd(num(row.get("CapMVRVCur")), 5))
     issUsd.append(rnd(num(row.get("IssTotUSD")), 0))
@@ -47,6 +50,8 @@ def bd_last(ep):
         if not isinstance(j, dict) or "error" in j:
             return None, None
         d = j.get("d") or j.get("theDay")
+        if not (isinstance(d, str) and DATE_RE.match(d)):
+            d = None  # reject non-ISO dates so nothing odd reaches the client
         val = next((v for k, v in j.items()
                     if k not in ("d", "unixTs", "theDay") and isinstance(v, (int, float))), None)
         return val, d
