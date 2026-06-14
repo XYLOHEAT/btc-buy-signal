@@ -1,5 +1,5 @@
 /* BTC Accumulation Signal — service worker (offline + fast repeat loads) */
-const CACHE = "btc-accum-v6";
+const CACHE = "btc-accum-v7";
 const SHELL = [
   "./", "./index.html", "./indicators.js?v=4", "./app.js?v=1", "./manifest.webmanifest",
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./coin.svg",
@@ -19,14 +19,19 @@ self.addEventListener("activate", (e) => {
   );
 });
 
-// data hosts: network-first (fresh, fall back to last-cached when offline)
-const DATA = /binance\.com|coingecko\.com|bitcoin-data\.com|raw\.githubusercontent\.com/;
+// data hosts: network-first (fresh, fall back to last-cached when offline).
+// Exact-hostname match (not a substring regex) so look-alike hosts don't match.
+const DATA_HOSTS = new Set([
+  "api.binance.com", "api.coingecko.com", "bitcoin-data.com", "raw.githubusercontent.com",
+]);
 
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   const url = e.request.url;
+  let host = "";
+  try { host = new URL(url).hostname; } catch (_) {}
   // network-first for the HTML shell (so deploys reach installed users) + live data
-  if (e.request.mode === "navigate" || url.endsWith("/index.html") || DATA.test(url) || url.includes("data.json")) {
+  if (e.request.mode === "navigate" || url.endsWith("/index.html") || DATA_HOSTS.has(host) || url.endsWith("/data.json")) {
     e.respondWith(
       fetch(e.request).then((r) => {
         const cp = r.clone();
