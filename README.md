@@ -28,3 +28,6 @@ python3 -m http.server 8777   # fetch needs http://, not file://
 
 ## Data licence
 On-chain history from Coin Metrics community data — **CC BY-NC 4.0** (attribution + non-commercial). Personal/non-commercial use only.
+
+## Decisions
+See [docs/adr.md](docs/adr.md) — why static, why `data.json`, why the design/security choices.
