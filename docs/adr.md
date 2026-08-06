@@ -53,3 +53,8 @@ One file, one entry per decision. Newest last. Status: accepted unless noted.
 **Context:** Considered moving to Cloudflare for WAF/Bot Fight Mode/Turnstile.
 **Decision:** Skip it.
 **Consequences:** Nothing to protect — no login, no user data, no per-request cost, and the data is already public. Challenges would only degrade real users. Revisit if a backend, accounts, or metered costs ever appear.
+
+## ADR-011 — Self-healing data + workflow keepalive
+**Context:** Coin Metrics community CSV silently stopped updating (2026-05-23); heatmap/charts lost 2.5 months. Separately, GitHub disables scheduled workflows after 60 days without user commits — bot commits don't count.
+**Decision:** `build_data.py` extends history past Coin Metrics' end using Binance daily klines (price) + bitcoin-data realized-price history (realized cap), carrying supply/issuance forward. `data.yml` gets a keepalive step that re-enables both scheduled workflows via the API every run.
+**Consequences:** The site keeps itself current with no manual attention, even if Coin Metrics never resumes (gap closes automatically if it does). Filled rows approximate supply linearly (~0.05%/mo error) — fine for MVRV-Z. Workflow failures still email the owner by default.

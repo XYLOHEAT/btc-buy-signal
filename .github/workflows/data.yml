@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+  actions: write   # keepalive step re-enables scheduled workflows
 concurrency:
   group: data
   cancel-in-progress: false
@@ -26,3 +27,9 @@ jobs:
           else
             echo "data.json unchanged"
           fi
+      - name: Keepalive (GitHub disables cron after 60 days without user commits)
+        run: |
+          gh api -X PUT "repos/${{ github.repository }}/actions/workflows/data.yml/enable"
+          gh api -X PUT "repos/${{ github.repository }}/actions/workflows/codeql.yml/enable"
+        env:
+          GH_TOKEN: ${{ github.token }}

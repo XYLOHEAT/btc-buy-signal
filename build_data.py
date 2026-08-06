@@ -42,6 +42,52 @@ for row in rows:
     issNtv.append(rnd(num(row.get("IssTotNtv")), 4))
     supply.append(rnd(num(row.get("SplyCur")), 2))
 
+# ---- extend history past Coin Metrics' end (upstream stalled 2026-05; ADR-011) ----
+# Price from Binance daily klines; realized cap from bitcoin-data realized-price
+# history; supply/issuance carried forward (same assumption as the client's
+# append-today row). Gap closes itself automatically if Coin Metrics resumes.
+def binance_daily(start_ms):
+    url = ("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d"
+           f"&startTime={start_ms}&limit=1000")
+    return {datetime.datetime.fromtimestamp(k[0] / 1000, datetime.timezone.utc)
+            .strftime("%Y-%m-%d"): float(k[4]) for k in json.loads(fetch(url))}
+
+def bd_history(ep):
+    try:
+        out = {}
+        for row in json.loads(fetch(BD + ep, timeout=40)):
+            d = row.get("d") or row.get("theDay")
+            if not (isinstance(d, str) and DATE_RE.match(d)):
+                continue
+            v = next((x for k, x in row.items()
+                      if k not in ("d", "unixTs", "theDay") and isinstance(x, (int, float))), None)
+            if v is not None:
+                out[d] = float(v)
+        return out
+    except Exception:
+        return {}
+
+today = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+if date and date[-1] < today:
+    last = date[-1]
+    start_ms = int(datetime.datetime.strptime(last, "%Y-%m-%d")
+                   .replace(tzinfo=datetime.timezone.utc).timestamp() * 1000) + 86_400_000
+    px = binance_daily(start_ms)
+    rp = bd_history("realized-price")
+    S = supply[-1]
+    iN = next((v for v in reversed(issNtv) if v is not None), 450.0)
+    last_rp = None
+    for d0 in sorted(px):
+        if d0 <= last or d0 >= today:  # today comes from the client's live-price row
+            continue
+        p = px[d0]
+        S = S + iN  # ponytail: linear supply carry (~0.05%/mo error), fine for MVRV-Z
+        last_rp = rp.get(d0, last_rp)
+        mc = p * S
+        date.append(d0); price.append(rnd(p, 2)); mcap.append(rnd(mc, 0))
+        mvrv.append(rnd(mc / (last_rp * S), 5) if last_rp else None)
+        issUsd.append(rnd(iN * p, 0)); issNtv.append(rnd(iN, 4)); supply.append(rnd(S, 2))
+
 # ---- fresh current metrics (bitcoin-data.com) ----
 def bd_last(ep):
     """Return (value, date) generically; tolerant of field-name + rate limits."""
