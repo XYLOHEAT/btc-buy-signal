@@ -46,11 +46,20 @@ for row in rows:
 # Price from Binance daily klines; realized cap from bitcoin-data realized-price
 # history; supply/issuance carried forward (same assumption as the client's
 # append-today row). Gap closes itself automatically if Coin Metrics resumes.
-def binance_daily(start_ms):
-    url = ("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d"
-           f"&startTime={start_ms}&limit=1000")
-    return {datetime.datetime.fromtimestamp(k[0] / 1000, datetime.timezone.utc)
-            .strftime("%Y-%m-%d"): float(k[4]) for k in json.loads(fetch(url))}
+def daily_closes(start_ms):
+    """date -> close. Binance first; Kraken fallback (Binance geo-blocks US runners)."""
+    try:
+        url = ("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d"
+               f"&startTime={start_ms}&limit=1000")
+        return {datetime.datetime.fromtimestamp(k[0] / 1000, datetime.timezone.utc)
+                .strftime("%Y-%m-%d"): float(k[4]) for k in json.loads(fetch(url))}
+    except Exception:
+        url = ("https://api.kraken.com/0/public/OHLC?pair=XBTUSD&interval=1440"
+               f"&since={start_ms // 1000}")
+        j = json.loads(fetch(url))
+        rows = next(iter(j.get("result", {}).values()), [])
+        return {datetime.datetime.fromtimestamp(k[0], datetime.timezone.utc)
+                .strftime("%Y-%m-%d"): float(k[4]) for k in rows if isinstance(k, list)}
 
 def bd_history(ep):
     try:
@@ -68,25 +77,28 @@ def bd_history(ep):
         return {}
 
 today = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
-if date and date[-1] < today:
-    last = date[-1]
-    start_ms = int(datetime.datetime.strptime(last, "%Y-%m-%d")
-                   .replace(tzinfo=datetime.timezone.utc).timestamp() * 1000) + 86_400_000
-    px = binance_daily(start_ms)
-    rp = bd_history("realized-price")
-    S = supply[-1]
-    iN = next((v for v in reversed(issNtv) if v is not None), 450.0)
-    last_rp = None
-    for d0 in sorted(px):
-        if d0 <= last or d0 >= today:  # today comes from the client's live-price row
-            continue
-        p = px[d0]
-        S = S + iN  # ponytail: linear supply carry (~0.05%/mo error), fine for MVRV-Z
-        last_rp = rp.get(d0, last_rp)
-        mc = p * S
-        date.append(d0); price.append(rnd(p, 2)); mcap.append(rnd(mc, 0))
-        mvrv.append(rnd(mc / (last_rp * S), 5) if last_rp else None)
-        issUsd.append(rnd(iN * p, 0)); issNtv.append(rnd(iN, 4)); supply.append(rnd(S, 2))
+try:
+    if date and date[-1] < today:
+        last = date[-1]
+        start_ms = int(datetime.datetime.strptime(last, "%Y-%m-%d")
+                       .replace(tzinfo=datetime.timezone.utc).timestamp() * 1000) + 86_400_000
+        px = daily_closes(start_ms)
+        rp = bd_history("realized-price")
+        S = supply[-1]
+        iN = next((v for v in reversed(issNtv) if v is not None), 450.0)
+        last_rp = None
+        for d0 in sorted(px):
+            if d0 <= last or d0 >= today:  # today comes from the client's live-price row
+                continue
+            p = px[d0]
+            S = S + iN  # ponytail: linear supply carry (~0.05%/mo error), fine for MVRV-Z
+            last_rp = rp.get(d0, last_rp)
+            mc = p * S
+            date.append(d0); price.append(rnd(p, 2)); mcap.append(rnd(mc, 0))
+            mvrv.append(rnd(mc / (last_rp * S), 5) if last_rp else None)
+            issUsd.append(rnd(iN * p, 0)); issNtv.append(rnd(iN, 4)); supply.append(rnd(S, 2))
+except Exception as e:
+    print("history extension skipped:", e)  # degrade to plain Coin Metrics history
 
 # ---- fresh current metrics (bitcoin-data.com) ----
 def bd_last(ep):
