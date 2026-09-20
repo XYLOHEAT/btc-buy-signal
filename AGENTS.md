@@ -1,0 +1,99 @@
+# AGENTS.md — btc-buy-signal
+
+Handoff notes for any coding agent (Codex, Claude Code, etc.) working in this repo.
+Human-facing overview: [README.md](README.md). Why things are the way they are: [docs/adr.md](docs/adr.md) — **read it before changing architecture**.
+
+## What this is
+
+Static, client-side BTC accumulation dashboard. No backend, no build step, no package manager.
+Live: https://xyloheat.github.io/btc-buy-signal/ (GitHub Pages serves this repo root on `main`).
+
+**Deploy = `git push` to `main`.** There is no staging. Verify locally first.
+
+## Files
+
+| File | Role |
+|---|---|
+| `index.html` | Markup + all CSS + CSP meta. No inline JS (CSP forbids it — see ADR-008). |
+| `app.js` | UI: i18n strings (`T`), render, charts, heatmap, DCA sim, backtest, theme/lang toggles. |
+| `indicators.js` | Pure compute. No DOM. Also loadable in Node (`module.exports`) — that's how you test it. |
+| `build_data.py` | Stdlib-only. Builds `data.json`. Run daily by `.github/workflows/data.yml`. |
+| `sw.js` | Service worker. Network-first for HTML + data, cache-first for static. |
+| `data.json` | Generated. **Never hand-edit** — the daily Action overwrites it. |
+| `docs/adr.md` | 11 decisions with context + consequences. |
+
+## Data flow
+
+```
+Coin Metrics CSV ─┐
+Kraken/Binance   ─┼─► build_data.py (daily, GitHub Action) ─► data.json ─┐
+bitcoin-data.com ─┘                                                      ├─► browser
+                                          Binance live price ────────────┘
+```
+
+Browser reads `data.json` (CSV fallback) + one live price call. It never calls bitcoin-data.com — that free API allows **10 req/hour per IP** and per-page-load calls exhausted it (ADR-004).
+
+## Local dev
+
+```bash
+python3 -m http.server 8777    # fetch() needs http://, not file://
+python3 build_data.py          # rebuild data.json (hits live APIs)
+```
+
+Service worker caches aggressively. When a change doesn't appear, unregister it in DevTools → Application → Service Workers, or bump `CACHE` in `sw.js`.
+
+## Testing
+
+`indicators.js` runs in Node, so compute changes get a real check:
+
+```bash
+node -e '
+const fs=require("fs"), I=require("./indicators.js");
+const j=JSON.parse(fs.readFileSync("data.json","utf8"));
+const fix=a=>a.map(v=>v===null?NaN:v);
+const RAW={date:j.date,price:fix(j.price),mcap:fix(j.mcap),mvrv:fix(j.mvrv),
+           issUsd:fix(j.issUsd),issNtv:fix(j.issNtv),supply:fix(j.supply)};
+const c=I.computeAll(RAW), sc=I.scoreSeries(c);
+console.log("last:", c.date.at(-1), "score:", sc.at(-1).toFixed(1));
+console.log(I.snapshot(c).label);
+'
+```
+
+Always run this after touching `indicators.js`. Compare the score before and after — a silent change there is invisible in the UI but wrong everywhere.
+
+## Common edits
+
+**Change an index's thresholds or weight** → `indicators.js`, the `INDICES` array (~line 152). Each entry has `weight`, `score(v)`, `status(v)`, `bands`. Changing a weight changes the headline score, the backtest, and the DCA sim — re-run the Node check and sanity-check the new score.
+
+**Add a new index** → add a compute column in `computeAll()`, then an `INDICES` entry, then TH+EN strings in `app.js` `T` (`status`, `metric`, `read`). The UI loops over `INDICES`, so cards, tooltips and chart tabs appear automatically.
+
+**Edit any visible text** → `app.js`, the `T` object (line 6). `T.th` and `T.en` are parallel; **add to both or the other language silently breaks**. Static labels are wired in `applyStaticLang()` (line 155); dynamic ones inside `render()` (line 180).
+
+**Add a new data metric from bitcoin-data.com** → `build_data.py`, add a `bd_last("<endpoint>")` call into the `fresh` dict, then read `FRESH.<key>` in `app.js`. Keep the Action's total bitcoin-data calls in single digits.
+
+**Styling** → `index.html` `<style>`. CSS variables at `:root`; dark mode overrides under `.dk` and the `prefers-color-scheme` block. Desktop two-column layout lives in the `@media (min-width:960px)` block.
+
+**Section anchors in `app.js`**: `getRaw` 115 · `applyStaticLang` 155 · `render` 180 · `renderDca` 246 · `renderCycle` 259 · `renderHeatmap` 269 · `renderBacktest` 297 · `drawChart` 328.
+
+## Hard constraints — do not break these
+
+1. **No inline `<script>` and no `onclick=` attributes.** CSP is `script-src 'self' https://cdn.jsdelivr.net`. Attach handlers as `.onclick = fn` in `app.js`. Inline script silently fails to execute.
+2. **Escape anything from data into `innerHTML`.** Use the existing `esc()` in `app.js`. Dates are validated ISO-only in `build_data.py` as the first layer.
+3. **Pin GitHub Actions to a commit SHA**, never a tag. Get one with `gh api repos/<owner>/<repo>/commits/<tag> --jq .sha`.
+4. **Bump the CDN's SRI hash** if you change the Chart.js version: `curl -s <url> | openssl dgst -sha384 -binary | openssl base64 -A`.
+5. **Non-commercial only.** Coin Metrics data is CC BY-NC 4.0 — no ads, no paid tier, no donations (ADR-005).
+6. **No new runtime dependencies** without a reason that survives ADR-002. Chart.js from CDN is the only one.
+
+## Workflows
+
+- `.github/workflows/data.yml` — daily `data.json` rebuild + a keepalive step that re-enables both cron workflows (GitHub disables schedules after 60 days without a *human* commit; bot commits don't count — ADR-011).
+- `.github/workflows/codeql.yml` — CodeQL on push/PR/weekly. Keep it at zero alerts.
+
+Trigger manually: `gh workflow run data.yml`.
+
+## Gotchas
+
+- **`data.json` merge conflicts** are routine — the Action commits it daily. After a local rebuild: `git checkout --ours data.json && git add data.json` during a rebase.
+- **Binance returns HTTP 451 on GitHub runners** (US geo-block). `build_data.py` falls back to Kraken OHLC. Locally Binance works, so a build that passes on your machine can still fail in CI — check the Action run.
+- **Coin Metrics history can silently stall** (it froze for 2.5 months in 2026). `build_data.py` extends past its end automatically; if months go missing on the heatmap, check `data.json`'s last `date` first.
+- Service worker caching is the usual reason a change "didn't deploy".

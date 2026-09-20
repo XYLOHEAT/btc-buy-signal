@@ -31,3 +31,6 @@ On-chain history from Coin Metrics community data — **CC BY-NC 4.0** (attribut
 
 ## Decisions
 See [docs/adr.md](docs/adr.md) — why static, why `data.json`, why the design/security choices.
+
+## For coding agents
+See [AGENTS.md](AGENTS.md) — file map, local dev, how to edit each part, and the constraints not to break.
