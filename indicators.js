@@ -162,7 +162,7 @@ const INDICES = [
     status: (v) => v < 0.1 ? "bottom" : v < 5 ? "กลาง" : "top zone",
     rule: "<0 bottom · >7 top",
     bands: [{ y: 0.1, color: "#34d399", label: "bottom" }, { y: 7, color: "#f87171", label: "top" }] },
-  { key: "wma_mult", title: "200W MA Heatmap", tier: "S", weight: 2, color: "#60a5fa",
+  { key: "wma_mult", title: "200W MA Multiple", tier: "S", weight: 2, color: "#60a5fa",
     fmt: (v) => v.toFixed(2) + "×", score: scoreWma,
     status: (v) => v <= 1.05 ? "แตะ 200WMA!" : v < 3 ? "ปกติ" : "ร้อน",
     rule: "≈1 = แตะ 200WMA (cycle bottom)",

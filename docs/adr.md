@@ -16,7 +16,7 @@ One file, one entry per decision. Newest last. Status: accepted unless noted.
 
 ## ADR-003 — Index selection and weighting
 **Context:** Dozens of candidate on-chain/valuation indices.
-**Decision:** Six indices only. Tier S weighted ×2 (Ahr999, MVRV Z-Score, 200W MA Heatmap), Tier A ×1 (Pi Cycle Top, Mayer, Puell). Stock-to-Flow deliberately excluded.
+**Decision:** Six indices only. Tier S weighted ×2 (Ahr999, MVRV Z-Score, 200W MA Multiple — price ÷ 200-week MA; called "Heatmap" until 2026-09, but the real heatmap colors by the MA's monthly % change), Tier A ×1 (Pi Cycle Top, Mayer, Puell). Stock-to-Flow deliberately excluded.
 **Consequences:** Score is explainable and each input is defensible. S2F is excluded because the model broke down after 2021 — including it would import a known-invalid signal.
 
 ## ADR-004 — `data.json` built daily by GitHub Actions

@@ -305,7 +305,7 @@ function renderBacktest(){
 }
 function buildTabs(){
   const tabs=document.getElementById("tabs");tabs.innerHTML="";
-  [["price","PRICE"],["score","SCORE"],...Indicators.INDICES.map(s=>[s.key,s.title.replace(" Multiple","").replace(" Top","").replace("-Score","").replace(" Heatmap","").toUpperCase()])]
+  [["price","PRICE"],["score","SCORE"],...Indicators.INDICES.map(s=>[s.key,s.title.replace(" Multiple","").replace(" Top","").replace("-Score","").toUpperCase()])]
     .forEach(([k,la])=>{const b=document.createElement("button");b.textContent=la;if(k===curKey)b.className="on";b.onclick=()=>{curKey=k;buildTabs();drawChart();};tabs.appendChild(b);});
   const rg=document.getElementById("ranges");rg.innerHTML="";
   [["1Y",365],["4Y",1460],["ALL",99999]].forEach(([la,n])=>{const b=document.createElement("button");b.textContent=la;if(n===curRange)b.className="on";b.onclick=()=>{curRange=n;buildTabs();drawChart();};rg.appendChild(b);});

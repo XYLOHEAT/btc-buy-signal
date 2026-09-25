@@ -4,7 +4,7 @@ On-chain valuation dashboard that answers one question: **is now a good time to 
 Static, client-side, no backend. **Live: https://xyloheat.github.io/btc-buy-signal/**
 
 Combines 6 valuation/on-chain indices into one 0–100 accumulation score
-(Tier S ×2: Ahr999, MVRV Z-Score, 200W MA Heatmap · Tier A: Pi Cycle, Mayer, Puell).
+(Tier S ×2: Ahr999, MVRV Z-Score, 200W MA Multiple · Tier A: Pi Cycle, Mayer, Puell).
 Reframed as *accumulation/DCA guidance*, not a buy signal. Not financial advice.
 
 ## Features
