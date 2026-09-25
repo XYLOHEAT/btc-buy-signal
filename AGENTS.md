@@ -2,6 +2,7 @@
 
 Handoff notes for any coding agent (Codex, Claude Code, etc.) working in this repo.
 Human-facing overview: [README.md](README.md). Why things are the way they are: [docs/adr.md](docs/adr.md) — **read it before changing architecture**.
+Design context (users, personality, anti-references, principles): [PRODUCT.md](PRODUCT.md) — **read it before changing anything visual**.
 
 ## What this is
 
