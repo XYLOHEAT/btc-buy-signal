@@ -21,7 +21,7 @@ Live: https://xyloheat.github.io/btc-buy-signal/ (GitHub Pages serves this repo 
 | `build_data.py` | Stdlib-only. Builds `data.json`. Run daily by `.github/workflows/data.yml`. |
 | `sw.js` | Service worker. Network-first for HTML + data (concurrent requests for one URL share a fetch — Chrome ignores the `data.json` preload under a SW), cache-first for static. |
 | `data.json` | Generated. **Never hand-edit** — the daily Action overwrites it. |
-| `fonts/` | Self-hosted woff2 subsets (Anuphan, Bricolage Grotesque, JetBrains Mono) + their OFL licences. `@font-face` rules sit at the top of `index.html`'s `<style>` (ADR-012). |
+| `fonts/` | Self-hosted woff2 subsets of **Anuphan**, the only typeface (Thai + Latin, tabular digits) + its OFL licence. `@font-face` rules sit at the top of `index.html`'s `<style>` (ADR-012). |
 | `docs/adr.md` | 12 decisions with context + consequences. |
 
 ## Data flow
@@ -73,7 +73,7 @@ Always run this after touching `indicators.js`. Compare the score before and aft
 
 **Add a new data metric from bitcoin-data.com** → `build_data.py`, add a `bd_last("<endpoint>")` call into the `fresh` dict, then read `FRESH.<key>` in `app.js`. Keep the Action's total bitcoin-data calls in single digits.
 
-**Styling** → `index.html` `<style>`. CSS variables at `:root`; dark mode overrides under `.dk` and the `prefers-color-scheme` block. Desktop two-column layout lives in the `@media (min-width:960px)` block. Text colors must stay **≥ 4.5:1** against `--bg` and `--surface` in both themes (`--faint` is the floor; use `--btc-text`, not `--btc`, for small orange text). Chart colors are hard-coded hex in `app.js` (`ZHEX`, `drawChart` ticks) — keep them in sync with the CSS variables.
+**Styling** → `index.html` `<style>`. CSS variables at `:root`; dark mode overrides under `.dk` and the `prefers-color-scheme` block. Desktop two-column layout lives in the `@media (min-width:960px)` block. Type is one family (Anuphan) on a fixed rem scale: `--text-caption` 13px (the floor; Thai marks need it), `--text-ui` 14, `--text-body` 16, `--text-subhead` 20, `--text-title` 24, `--text-display` 60. No new sizes, no uppercase text-transform, no letter-spacing on anything that can contain Thai (ADR-013). Text colors must stay **≥ 4.5:1** against `--bg` and `--surface` in both themes (`--faint` is the floor; use `--btc-text`, not `--btc`, for small orange text). Chart colors are hard-coded hex in `app.js` (`ZHEX`, `drawChart` ticks) — keep them in sync with the CSS variables.
 
 **Section anchors in `app.js`**: `getRaw` 115 · `applyStaticLang` 154 · `render` 179 · `renderDca` 246 · `renderCycle` 259 · `renderHeatmap` 269 · `renderBacktest` 297 · `drawChart` 328.
 

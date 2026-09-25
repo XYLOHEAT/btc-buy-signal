@@ -22,7 +22,7 @@ const T={
   btWin:(w,n)=>`ชนะ ${w}% · n=${n}`, btN0:"n=0",
   btNote:"ย้อนหลังเต็มประวัติ (2010+) · median = ผลตอบแทนกลางหลังเกิดสัญญาณ · overlapping windows + ตลาดขาขึ้นยุคแรกดันค่าสูง · n น้อย = ไม่น่าเชื่อถือ · ไม่ใช่การรับประกัน",
   loading:"ดึงข้อมูล on-chain…", err:m=>`โหลดข้อมูลไม่ได้: ${m}<br>เช็คเน็ตแล้วรีเฟรช`,
-  foot:`REALIZED PRICE: <a href="https://bitcoin-data.com" target="_blank" rel="noopener">BITCOIN-DATA.COM</a> · HISTORY: <a href="https://github.com/coinmetrics/data" target="_blank" rel="noopener">COIN METRICS</a> <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a> · PRICE: BINANCE / KRAKEN / COINGECKO<br>ใช้ส่วนตัว ไม่เชิงพาณิชย์ · ไม่ใช่คำแนะนำลงทุน · เครื่องมือดูจังหวะสะสม ไม่ใช่สัญญาณซื้อทันที`,
+  foot:`Realized price: <a href="https://bitcoin-data.com" target="_blank" rel="noopener">bitcoin-data.com</a> · History: <a href="https://github.com/coinmetrics/data" target="_blank" rel="noopener">Coin Metrics</a> (<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a>) · Price: Binance / Kraken / CoinGecko<br>ใช้ส่วนตัว ไม่เชิงพาณิชย์ · ไม่ใช่คำแนะนำลงทุน · เครื่องมือดูจังหวะสะสม ไม่ใช่สัญญาณซื้อทันที`,
   status:{ahr999:v=>v<0.45?"ถูกมาก":v<=1.2?"DCA zone":"แพง",mvrv_z:v=>v<0.1?"bottom":v<5?"กลาง":"top zone",wma_mult:v=>v<=1.05?"แตะ 200WMA!":v<3?"ปกติ":"ร้อน",pi_ratio:v=>v<0.7?"ไกล top":v>=0.95?"ใกล้ top!":"กลาง",mayer:v=>v<1?"ถูก":v<2.4?"ปกติ":"ร้อน",puell:v=>v<0.5?"miner bottom":v<4?"ปกติ":"top"},
   metric:{ahr999:"ดัชนี DCA — เทียบราคากับต้นทุนเฉลี่ย 200 วัน × เส้น fair value. ต่ำ = ถูกเชิงสะสม. ระวัง: อิงราคาล้วน",
     mvrv_z:"market cap เทียบ realized cap (z-score). <0 = ขาดทุนรวม (bottom), >7 = euphoria (top). แม่นรอบใหญ่",
@@ -62,7 +62,7 @@ const T={
   btWin:(w,n)=>`${w}% win · n=${n}`, btN0:"n=0",
   btNote:"Full history (2010+) · median = forward return after the signal · overlapping windows + early bull market inflate it · low n = unreliable · not a guarantee",
   loading:"Loading on-chain data…", err:m=>`Couldn't load data: ${m}<br>Check connection and refresh`,
-  foot:`REALIZED PRICE: <a href="https://bitcoin-data.com" target="_blank" rel="noopener">BITCOIN-DATA.COM</a> · HISTORY: <a href="https://github.com/coinmetrics/data" target="_blank" rel="noopener">COIN METRICS</a> <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a> · PRICE: BINANCE / KRAKEN / COINGECKO<br>Personal, non-commercial · not financial advice · accumulation-timing tool, not an instant buy signal`,
+  foot:`Realized price: <a href="https://bitcoin-data.com" target="_blank" rel="noopener">bitcoin-data.com</a> · History: <a href="https://github.com/coinmetrics/data" target="_blank" rel="noopener">Coin Metrics</a> (<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a>) · Price: Binance / Kraken / CoinGecko<br>Personal, non-commercial · not financial advice · accumulation-timing tool, not an instant buy signal`,
   status:{ahr999:v=>v<0.45?"very cheap":v<=1.2?"DCA zone":"expensive",mvrv_z:v=>v<0.1?"bottom":v<5?"mid":"top zone",wma_mult:v=>v<=1.05?"at 200WMA!":v<3?"normal":"hot",pi_ratio:v=>v<0.7?"far from top":v>=0.95?"near top!":"mid",mayer:v=>v<1?"cheap":v<2.4?"normal":"hot",puell:v=>v<0.5?"miner bottom":v<4?"normal":"top"},
   metric:{ahr999:"DCA index — price vs 200-day cost basis × fair-value fit. Low = cheap to accumulate. Note: price-only",
     mvrv_z:"Market cap vs realized cap (z-score). <0 = aggregate loss (bottom), >7 = euphoria (top). Accurate on big cycles",
@@ -71,7 +71,7 @@ const T={
     mayer:"Price ÷ 200DMA. <1 = below average (cheap), >2.4 = overheated",
     puell:"Miner revenue vs yearly average. <0.5 = miner capitulation (often a bottom), >4 = top"},
   read:{ahr999:"Score: ≤0.45 = 100 (cheapest) · ~1.2 = 50 · ≥4 = 0 (expensive)",mvrv_z:"Score: ≤0 = 100 (bottom) · 7 = 0 (top)",wma_mult:"Score: ≤1.0× = 100 (floor) · ≥3× = 0",pi_ratio:"Score: ≤0.6 = 100 · 1.0 = 0 (top)",mayer:"Score: ≤0.8 = 100 · ≥2.4 = 0 (hot)",puell:"Score: ≤0.5 = 100 (miner bottom) · ≥4 = 0"},
-  valueL:"VALUE",riskL:"RISK (short)",actL:"ACTION",riskW:{low:"Low",med:"Medium",high:"High"},
+  valueL:"Value",riskL:"Short-term risk",actL:"Action",riskW:{low:"Low",med:"Medium",high:"High"},
   act:{addStrong:"DCA / add",dcaGrad:"DCA gradually (cheap, weak trend)",normal:"Normal DCA / wait",hold:"Hold · trim adds",reduce:"Reduce · avoid leverage"},
   rpL:"Realized price (cost basis)",nuplL:"NUPL (sentiment)",
   secDca:"DCA Simulator · if you followed the signal",
@@ -151,6 +151,9 @@ function spark(key,bands){
   return`<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${bl}<path d="${d}" fill="none" stroke="${inkHex()}" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
 }
 
+/* section heading: "Title · subtitle" -> <h2>Title<small>subtitle</small></h2> */
+function head(id,str){const [t,sub]=str.split(" · "),h=document.getElementById(id);h.textContent=t;
+  if(sub){const sm=document.createElement("small");sm.textContent=sub;h.appendChild(sm);}}
 function applyStaticLang(){const l=L();
   document.documentElement.lang=LANG;
   document.getElementById("m-sub").textContent=l.sub;
@@ -159,15 +162,13 @@ function applyStaticLang(){const l=L();
   document.getElementById("s-mom-l").textContent=l.momL;
   document.getElementById("ins-action-l").textContent=l.action;
   document.getElementById("ins-inval-l").textContent=l.invalidLbl;
-  document.getElementById("lbl-index").textContent=l.secIndex;
-  document.getElementById("lbl-charts").textContent=l.secCharts;
-  document.getElementById("lbl-bt").textContent=l.secBt;
+  head("lbl-index",l.secIndex);head("lbl-charts",l.secCharts);head("lbl-bt",l.secBt);
   document.getElementById("bt-note").innerHTML=l.btNote;
-  document.getElementById("lbl-dca").textContent=l.secDca;
+  head("lbl-dca",l.secDca);
   document.getElementById("dca-note").innerHTML=l.dcaNote;
-  document.getElementById("lbl-cyc").textContent=l.secCyc;
+  head("lbl-cyc",l.secCyc);
   document.getElementById("cyc-note").innerHTML=l.cycNote;
-  document.getElementById("lbl-hm").textContent=l.secHm;
+  head("lbl-hm",l.secHm);
   document.getElementById("hm-note").innerHTML=l.hmNote;
   document.getElementById("foot").innerHTML=l.foot;
   const ov=document.getElementById("ovmsg");if(ov)ov.textContent=l.loading;
@@ -181,13 +182,13 @@ function render(t){
   const arc=document.getElementById("arc");arc.style.stroke=col;arc.setAttribute("stroke-dasharray",C);arc.setAttribute("stroke-dashoffset",C);
   requestAnimationFrame(()=>arc.setAttribute("stroke-dashoffset",C*(1-SNAP.overall/100)));
   const sc=document.getElementById("score");sc.style.color=col;countUp(sc,SNAP.overall);
-  const z=document.getElementById("zone");z.textContent=SNAP.label.replace("STRONG BUY","STRONG ACCUMULATE");z.style.color=col;
+  const z=document.getElementById("zone");z.textContent=ZT(SNAP.label);z.style.color=col;
   document.getElementById("zoneth").textContent=l.zone[SNAP.label];
   coin(SNAP.label);
 
   document.getElementById("price").textContent="$"+Math.round(SNAP.price).toLocaleString("en-US");
   const chg=document.getElementById("chg");
-  if(t&&Number.isFinite(t.chg)){chg.className="chg "+(t.chg>=0?"up":"down");chg.textContent=(t.chg>=0?"+":"−")+Math.abs(t.chg).toFixed(2)+"% 24H";}else chg.textContent="";
+  if(t&&Number.isFinite(t.chg)){chg.className="chg "+(t.chg>=0?"up":"down");chg.textContent=(t.chg>=0?"+":"−")+Math.abs(t.chg).toFixed(2)+"% 24h";}else chg.textContent="";
   const now=new Date().toLocaleTimeString(LANG==="th"?"th-TH":"en-GB",{hour:"2-digit",minute:"2-digit"});
   const ocDate=ONCHAIN_FRESH||ONCHAIN,ocDays=Math.round((Date.now()-Date.parse(ocDate+"T00:00:00Z"))/86400000);
   let line2=l.onchain(esc(ocDate),ocDays);if(ocDays>10)line2+=l.stale; // bitcoin-data free tier lags 7d (since 2026-09); warn only beyond that
@@ -212,7 +213,7 @@ function render(t){
   document.getElementById("layers").innerHTML=
     `<div class="cell"><div class="k">${l.valueL}</div><div class="v" style="color:${scoreVar(SNAP.overall)}">${SNAP.overall.toFixed(0)}</div><div class="vs">${l.val(SNAP.overall)}</div></div>
      <div class="cell"><div class="k">${l.riskL}</div><div class="v" style="color:${riskCol}">${l.riskW[riskKey]}</div><div class="vs">${up?"≥200DMA":"<200DMA"}${belowW?" · <200WMA":""}</div></div>
-     <div class="cell"><div class="k">${l.actL}</div><div class="v" style="font-size:13.5px;color:var(--ink)">${actText}</div></div>`;
+     <div class="cell"><div class="k">${l.actL}</div><div class="v act">${actText}</div></div>`;
 
   const zhtml=`<b style="color:${scoreVar(SNAP.overall)}">${l.zone[SNAP.label]}</b>`;
   document.getElementById("ins-what").innerHTML=l.what(zhtml,SNAP.overall.toFixed(0),up,belowW);
@@ -240,7 +241,7 @@ function render(t){
 /* ---- DCA simulator ---- */
 let curDcaStart="2020-01-01";
 function buildDcaRange(){const h=document.getElementById("dcaRange");h.innerHTML="";
-  [["2016","2016-01-01"],["2018","2018-01-01"],["2020","2020-01-01"],["2022","2022-01-01"],["ALL",null]].forEach(([la,st])=>{
+  [["2016","2016-01-01"],["2018","2018-01-01"],["2020","2020-01-01"],["2022","2022-01-01"],["All",null]].forEach(([la,st])=>{
     const b=document.createElement("button");b.textContent=la;if(st===curDcaStart)b.className="on";
     b.onclick=()=>{curDcaStart=st;buildDcaRange();renderDca();};h.appendChild(b);});}
 function renderDca(){
@@ -292,23 +293,24 @@ function countUp(node,to){const t0=performance.now();
 
 const pct=x=>(x>=0?"+":"−")+Math.abs(x*100).toFixed(0)+"%";
 const ZDISP=z=>z.replace("STRONG BUY","STRONG ACCUMULATE");
+const ZT=z=>ZDISP(z).toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase()); // "Strong Accumulate": labels, not shouting
 function buildBtH(){const h=document.getElementById("bth");h.innerHTML="";
   [["1M",30],["3M",90],["6M",180],["1Y",365]].forEach(([la,n])=>{const b=document.createElement("button");b.textContent=la;if(n===curH)b.className="on";b.onclick=()=>{curH=n;buildBtH();renderBacktest();};h.appendChild(b);});}
 function renderBacktest(){
   const l=L(),bt=Indicators.backtest(COMP,SCORES,curH),cur=bt.find(b=>b.zone===SNAP.label);
-  document.getElementById("bthead").innerHTML=(cur&&cur.n)?l.btHead(`<b style="color:${scoreVar(SNAP.overall)}">${ZDISP(SNAP.label)}</b>`,pct(cur.median),curH,cur.n,Math.round(cur.win*100)):"";
+  document.getElementById("bthead").innerHTML=(cur&&cur.n)?l.btHead(`<b style="color:${scoreVar(SNAP.overall)}">${ZT(SNAP.label)}</b>`,pct(cur.median),curH,cur.n,Math.round(cur.win*100)):"";
   const box=document.getElementById("bt");box.innerHTML="";
   bt.forEach(b=>{const k=band(b.zone==="STRONG BUY"?80:b.zone==="ACCUMULATE"?60:b.zone==="NEUTRAL"?45:b.zone==="CAUTION"?30:10);
     const el=document.createElement("div");el.className="bt-row"+(b.zone===SNAP.label?" on":"");
-    el.innerHTML=`<span class="z" style="color:var(--z-${k})">${ZDISP(b.zone)}</span><span class="m" style="color:${b.n?(b.median>=0?"var(--z-good)":"var(--z-bad)"):"var(--faint)"}">${b.n?pct(b.median):"—"}</span><span class="w">${b.n?l.btWin(Math.round(b.win*100),b.n):l.btN0}</span>`;
+    el.innerHTML=`<span class="z" style="color:var(--z-${k})">${ZT(b.zone)}</span><span class="m" style="color:${b.n?(b.median>=0?"var(--z-good)":"var(--z-bad)"):"var(--faint)"}">${b.n?pct(b.median):"—"}</span><span class="w">${b.n?l.btWin(Math.round(b.win*100),b.n):l.btN0}</span>`;
     box.appendChild(el);});
 }
 function buildTabs(){
   const tabs=document.getElementById("tabs");tabs.innerHTML="";
-  [["price","PRICE"],["score","SCORE"],...Indicators.INDICES.map(s=>[s.key,s.title.replace(" Multiple","").replace(" Top","").replace("-Score","").toUpperCase()])]
+  [["price","Price"],["score","Score"],...Indicators.INDICES.map(s=>[s.key,s.title.replace(" Multiple","").replace(" Top","").replace("-Score","")])]
     .forEach(([k,la])=>{const b=document.createElement("button");b.textContent=la;if(k===curKey)b.className="on";b.onclick=()=>{curKey=k;buildTabs();drawChart();};tabs.appendChild(b);});
   const rg=document.getElementById("ranges");rg.innerHTML="";
-  [["1Y",365],["4Y",1460],["ALL",99999]].forEach(([la,n])=>{const b=document.createElement("button");b.textContent=la;if(n===curRange)b.className="on";b.onclick=()=>{curRange=n;buildTabs();drawChart();};rg.appendChild(b);});
+  [["1Y",365],["4Y",1460],["All",99999]].forEach(([la,n])=>{const b=document.createElement("button");b.textContent=la;if(n===curRange)b.className="on";b.onclick=()=>{curRange=n;buildTabs();drawChart();};rg.appendChild(b);});
 }
 /* vertical dashed line + year label at each halving (price/score tabs) */
 const halvingPlugin={id:"hv",afterDatasetsDraw(ch){
@@ -320,7 +322,7 @@ const halvingPlugin={id:"hv",afterDatasetsDraw(ch){
     const x=xs.getPixelForValue(lo);
     ctx.strokeStyle=faint;ctx.lineWidth=1;ctx.setLineDash([3,4]);
     ctx.beginPath();ctx.moveTo(x,ch.chartArea.top);ctx.lineTo(x,ch.chartArea.bottom);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle=faint;ctx.font="9px 'JetBrains Mono'";ctx.fillText("⛏"+d.slice(2,4),x+3,ch.chartArea.top+10);
+    ctx.fillStyle=faint;ctx.font="12px Anuphan";ctx.fillText("⛏"+d.slice(2,4),x+3,ch.chartArea.top+10);
   }
   ctx.restore();
 }};
@@ -328,19 +330,19 @@ const halvingPlugin={id:"hv",afterDatasetsDraw(ch){
 function drawChart(){
   if(!window.Chart){document.getElementById("chartjs").addEventListener("load",drawChart,{once:true});return;} // Chart.js is deferred; a CDN failure leaves the page usable, just chartless
   const N=COMP.date.length,start=Math.max(0,N-curRange),labels=COMP.date.slice(start),ink=inkHex();
-  const grid={color:DARK()?"rgba(255,255,255,.07)":"rgba(20,20,16,.07)"},ticks={color:DARK()?"#85827b":"#6e6e69",font:{size:10,family:"JetBrains Mono"},maxTicksLimit:5};
+  const grid={color:DARK()?"rgba(255,255,255,.07)":"rgba(20,20,16,.07)"},ticks={color:DARK()?"#85827b":"#6e6e69",font:{size:12,family:"Anuphan"},maxTicksLimit:5};
   const mk=(la,arr,color,w=1.8,dash=null)=>({label:la,data:arr.slice(start),borderColor:color,borderWidth:w,borderDash:dash||[],pointRadius:0,tension:.2,spanGaps:true,fill:false});
   let datasets=[],logY=false;
   if(curKey==="price"){logY=true;datasets=[mk("BTC",COMP.price,ink,2),mk("200W MA",COMP.ma200w,btcHex(),1.6),mk("200D MA",COMP.ma200,DARK()?"#6c6960":"#a9a9a2",1,[4,4])];
-    const sb=COMP.price.map((p,i)=>SCORES[i]>=75?p:null);datasets.push({label:"STRONG",data:sb.slice(start),borderColor:hx("good"),backgroundColor:hx("good"),showLine:false,pointRadius:1.6,pointHoverRadius:3,spanGaps:false});
+    const sb=COMP.price.map((p,i)=>SCORES[i]>=75?p:null);datasets.push({label:"Strong zone",data:sb.slice(start),borderColor:hx("good"),backgroundColor:hx("good"),showLine:false,pointRadius:1.6,pointHoverRadius:3,spanGaps:false});
     if(FRESH&&Number.isFinite(FRESH.realizedPrice))datasets.push({label:"Realized",data:labels.map(()=>FRESH.realizedPrice),borderColor:DARK()?"#9b988f":"#9a6a00",borderWidth:1,borderDash:[2,3],pointRadius:0,fill:false});}
   else if(curKey==="score"){datasets=[mk("Buy score",SCORES,ink,2)];[[75,hx("good")],[55,hx("ok")],[40,hx("neutral")],[25,hx("warn")]].forEach(([y,c])=>datasets.push({label:String(y),data:labels.map(()=>y),borderColor:c,borderWidth:1,borderDash:[5,4],pointRadius:0,fill:false}));}
   else if(curKey==="pi_ratio"){logY=true;datasets=[mk("111D",COMP.ma111,ink,1.8),mk("2×350D",COMP.ma350x2,hx("bad"),1.6)];}
   else{const s=Indicators.INDICES.find(x=>x.key===curKey);datasets=[mk(s.title,COMP[curKey],ink,2)];s.bands.forEach(b=>datasets.push({label:b.label,data:labels.map(()=>b.y),borderColor:b.color,borderWidth:1,borderDash:[5,4],pointRadius:0,fill:false}));}
   if(chart)chart.destroy();
   chart=new Chart(document.getElementById("chart"),{type:"line",data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,animation:false /* per-point animations made each draw ~15x slower (TBT/INP) */,interaction:{mode:"index",intersect:false},
-    plugins:{legend:{display:datasets.length>1,labels:{color:DARK()?"#9b988f":"#5f5f5a",font:{size:10,family:"JetBrains Mono"},boxWidth:14,boxHeight:1,usePointStyle:false}},tooltip:{backgroundColor:DARK()?"#16181c":"#171715",titleColor:"#fafaf8",bodyColor:"#d8d8d2",borderColor:DARK()?"rgba(255,255,255,.12)":"transparent",borderWidth:1,cornerRadius:0,padding:9,titleFont:{family:"JetBrains Mono",size:11},bodyFont:{family:"JetBrains Mono",size:11},displayColors:false}},
-    scales:{x:{grid,ticks:{...ticks,maxTicksLimit:4},border:{color:DARK()?"rgba(255,255,255,.13)":"rgba(20,20,16,.14)"}},y:{type:logY?"logarithmic":"linear",grid,ticks,position:"right",border:{display:false}}}},
+    plugins:{legend:{display:datasets.length>1,labels:{color:DARK()?"#9b988f":"#5f5f5a",font:{size:12,family:"Anuphan"},boxWidth:14,boxHeight:1,usePointStyle:false}},tooltip:{backgroundColor:DARK()?"#16181c":"#171715",titleColor:"#fafaf8",bodyColor:"#d8d8d2",borderColor:DARK()?"rgba(255,255,255,.12)":"transparent",borderWidth:1,cornerRadius:0,padding:9,titleFont:{family:"Anuphan",size:13},bodyFont:{family:"Anuphan",size:13},displayColors:false}},
+    scales:{x:{grid,ticks:{...ticks,maxTicksLimit:4,callback(v){return String(this.getLabelForValue(v)).slice(0,7);}} /* YYYY-MM: full dates collide on phones */,border:{color:DARK()?"rgba(255,255,255,.13)":"rgba(20,20,16,.14)"}},y:{type:logY?"logarithmic":"linear",grid,ticks,position:"right",border:{display:false}}}},
     plugins:(curKey==="price"||curKey==="score")?[halvingPlugin]:[]});
 }
 

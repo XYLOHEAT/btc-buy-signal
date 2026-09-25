@@ -28,7 +28,7 @@ python3 -m http.server 8777   # fetch needs http://, not file://
 
 ## Licences
 - On-chain history from Coin Metrics community data — **CC BY-NC 4.0** (attribution + non-commercial). Personal/non-commercial use only.
-- Fonts: Anuphan, Bricolage Grotesque, JetBrains Mono — **SIL Open Font License 1.1**, licence texts in [`fonts/`](fonts/).
+- Font: Anuphan — **SIL Open Font License 1.1**, licence text in [`fonts/`](fonts/).
 
 ## Decisions
 See [docs/adr.md](docs/adr.md) — why static, why `data.json`, why the design/security choices.
