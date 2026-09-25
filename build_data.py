@@ -85,7 +85,10 @@ try:
         px = daily_closes(start_ms)
         rp = bd_history("realized-price")
         S = supply[-1]
-        iN = next((v for v in reversed(issNtv) if v is not None), 450.0)
+        # daily issuance for filled days = 90-day mean of real days. A single day swings ±15% with
+        # block luck: the last Coin Metrics day alone (512.5 vs ~447 avg) inflated Puell ~9%.
+        recent = [v for v in issNtv[-90:] if v is not None]
+        iN = sum(recent) / len(recent) if recent else 450.0
         last_rp = None
         for d0 in sorted(px):
             if d0 <= last or d0 >= today:  # today comes from the client's live-price row

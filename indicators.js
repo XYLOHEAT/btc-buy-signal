@@ -50,7 +50,9 @@ function appendToday(d, price, today) {
 
   const realizedCap = out.mcap[k] / out.mvrv[k];
   const supply = out.supply[k];
-  const issNtv = out.issNtv[k];
+  // today's issuance isn't known yet: 30-day mean (a single day swings ±15% with block luck)
+  const recent = out.issNtv.slice(Math.max(0, k - 29), k + 1).filter(Number.isFinite);
+  const issNtv = recent.reduce((a, b) => a + b, 0) / recent.length;
   const mcap = price * supply;
   const date = today || new Date().toISOString().slice(0, 10);
 
