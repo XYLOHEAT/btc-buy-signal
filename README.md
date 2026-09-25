@@ -14,20 +14,21 @@ Reframed as *accumulation/DCA guidance*, not a buy signal. Not financial advice.
 - **PWA** (installable, offline) · mobile-first + desktop two-column
 
 ## How it works
-- `index.html` UI/CSS · `app.js` render/i18n · `indicators.js` pure compute (also runs in Node) · `sw.js` service worker
-- `build_data.py` (stdlib) builds `data.json` daily via GitHub Action — bakes Coin Metrics history + fresh MVRV-Z / Puell / NUPL / realized price from bitcoin-data.com (keeps the browser off bitcoin-data's 10 req/hr limit)
-- Browser reads `data.json` (CSV fallback) + live price from Binance (CoinGecko fallback)
+- `index.html` UI/CSS · `app.js` render/i18n · `indicators.js` pure compute (also runs in Node) · `sw.js` service worker · `fonts/` self-hosted fonts
+- `build_data.py` (stdlib) builds `data.json` daily via GitHub Action — Coin Metrics history, extended past its end with Kraken/Binance daily closes + bitcoin-data.com realized price (keeps the browser off bitcoin-data's 10 req/hr limit)
+- Browser reads `data.json` (CSV fallback) + live price from Binance (CoinGecko fallback); today's MVRV-Z / Puell / NUPL are computed at the live price
 
 ## Security
-Strict CSP (`script-src 'self'`, no `unsafe-inline`) · SRI on Chart.js · all GitHub Actions pinned to commit SHA · CodeQL on every push (0 alerts) · no secrets / user data / backend.
+Strict CSP (`script-src 'self'`, no `unsafe-inline`; `font-src 'self'`) · SRI on Chart.js · self-hosted fonts (no Google Fonts requests) · all GitHub Actions pinned to commit SHA · CodeQL on every push (0 alerts) · no secrets / user data / backend.
 
 ## Run locally
 ```bash
 python3 -m http.server 8777   # fetch needs http://, not file://
 ```
 
-## Data licence
-On-chain history from Coin Metrics community data — **CC BY-NC 4.0** (attribution + non-commercial). Personal/non-commercial use only.
+## Licences
+- On-chain history from Coin Metrics community data — **CC BY-NC 4.0** (attribution + non-commercial). Personal/non-commercial use only.
+- Fonts: Anuphan, Bricolage Grotesque, JetBrains Mono — **SIL Open Font License 1.1**, licence texts in [`fonts/`](fonts/).
 
 ## Decisions
 See [docs/adr.md](docs/adr.md) — why static, why `data.json`, why the design/security choices.

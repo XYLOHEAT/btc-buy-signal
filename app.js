@@ -127,11 +127,10 @@ async function getRaw(){
 async function load(){const tp=ticker();await getRaw();await recompute(tp);} // live price + data.json in parallel
 async function recompute(tp){
   const t=await(tp||ticker());lastT=t;const px=t?t.price:null;
-  const data=px?Indicators.appendToday(RAW,px):{...RAW};COMP=Indicators.computeAll(data);ONCHAIN_FRESH="";
-  if(FRESH){const li=COMP.price.length-1;
-    if(Number.isFinite(FRESH.mvrv))COMP.mvrv_z[li]=FRESH.mvrv;
-    if(Number.isFinite(FRESH.puell))COMP.puell[li]=FRESH.puell;
-    if(FRESH.date)ONCHAIN_FRESH=FRESH.date;}
+  const data=px?Indicators.appendToday(RAW,px):{...RAW};COMP=Indicators.computeAll(data);
+  // Current MVRV-Z/Puell come from our own series (live price + newest realized cap): fresher than
+  // bitcoin-data's 7-day-delayed values, and the same method as the history/backtest (ADR-004).
+  ONCHAIN_FRESH=(FRESH&&FRESH.date)||""; // date of the newest real on-chain input (realized price)
   SCORES=Indicators.scoreSeries(COMP);SNAP=Indicators.snapshot(COMP);render(t);
 }
 
@@ -204,7 +203,8 @@ function render(t){
   // realized price + NUPL (baked into data.json by the daily Action; shown only if present)
   const rpW=document.getElementById("s-rp-wrap"),nuW=document.getElementById("s-nupl-wrap");
   if(FRESH&&Number.isFinite(FRESH.realizedPrice)){document.getElementById("s-rp-l").textContent=l.rpL;document.getElementById("s-rp").textContent="$"+Math.round(FRESH.realizedPrice).toLocaleString("en-US");rpW.hidden=false;}else rpW.hidden=true;
-  if(FRESH&&Number.isFinite(FRESH.nupl)){document.getElementById("s-nupl-l").textContent=l.nuplL;document.getElementById("s-nupl").textContent=FRESH.nupl.toFixed(2)+" · "+nuplPhase(FRESH.nupl);nuW.hidden=false;}else nuW.hidden=true;
+  const nupl=FRESH&&Number.isFinite(FRESH.realizedPrice)?1-FRESH.realizedPrice/SNAP.price:FRESH&&FRESH.nupl; // NUPL = 1 − realized/market, at the live price
+  if(Number.isFinite(nupl)){document.getElementById("s-nupl-l").textContent=l.nuplL;document.getElementById("s-nupl").textContent=nupl.toFixed(2)+" · "+nuplPhase(nupl);nuW.hidden=false;}else nuW.hidden=true;
   // 3-layer Value / Risk / Action
   const riskKey=(!up&&belowW)?"high":(!up||belowW)?"med":"low";
   const actText=SNAP.overall>=55?(riskKey==="low"?l.act.addStrong:l.act.dcaGrad):SNAP.overall>=40?l.act.normal:(riskKey==="high"?l.act.reduce:l.act.hold);
