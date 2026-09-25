@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Free Bitcoin accumulation dashboard: Ahr999, MVRV Z-Score, 200W MA, Pi Cycle, Mayer and Puell combined into one 0–100 score, with backtest and DCA simulator.">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.binance.com https://api.coingecko.com https://raw.githubusercontent.com; base-uri 'self'; object-src 'none'">
 <meta name="theme-color" content="#f3f3f0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0e0f12" media="(prefers-color-scheme: dark)">
@@ -16,24 +17,28 @@
 <meta name="apple-mobile-web-app-title" content="BTC Accum">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://api.binance.com" crossorigin>
+<link rel="preload" href="data.json" as="fetch" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=JetBrains+Mono:wght@500;600;700&family=Anuphan:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4" crossorigin="anonymous"></script>
+<!-- defer: not render-blocking; drawChart() waits for this tag's load event -->
+<script id="chartjs" defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4" crossorigin="anonymous"></script>
 <style>
 :root{
-  --bg:#f3f3f0; --surface:#fafaf8; --ink:#171715; --muted:#5f5f5a; --faint:#8a8a83;
+  /* text colors stay >= 4.5:1 on --bg and --surface (WCAG AA); --faint is the floor */
+  --bg:#f3f3f0; --surface:#fafaf8; --ink:#171715; --muted:#5f5f5a; --faint:#6e6e69;
   --line:rgba(20,20,16,.14); --line-soft:rgba(20,20,16,.07);
-  --btc:#c96b08;
-  --z-good:#1c7a47; --z-ok:#5f7d12; --z-neutral:#9a6a00; --z-warn:#bd5a1a; --z-bad:#bb2f24;
+  --btc:#c96b08; --btc-text:#a75907;
+  --z-good:#1c7a47; --z-ok:#5a7711; --z-neutral:#926500; --z-warn:#ae5318; --z-bad:#bb2f24;
   --display:'Bricolage Grotesque',system-ui,sans-serif;
   --mono:'JetBrains Mono',ui-monospace,monospace;
   --body:'Anuphan','Bricolage Grotesque',sans-serif;
 }
-.dk{ --bg:#0e0f12; --surface:#16181c; --ink:#e9e7e1; --muted:#9b988f; --faint:#6c6960;
-  --line:rgba(255,255,255,.13); --line-soft:rgba(255,255,255,.06); --btc:#f7931a;
+.dk{ --bg:#0e0f12; --surface:#16181c; --ink:#e9e7e1; --muted:#9b988f; --faint:#85827b;
+  --line:rgba(255,255,255,.13); --line-soft:rgba(255,255,255,.06); --btc:#f7931a; --btc-text:#f7931a;
   --z-good:#34d399; --z-ok:#a3e635; --z-neutral:#fbbf24; --z-warn:#fb923c; --z-bad:#f87171; }
 @media (prefers-color-scheme: dark){ :root:not(.lt){
-  --bg:#0e0f12; --surface:#16181c; --ink:#e9e7e1; --muted:#9b988f; --faint:#6c6960;
-  --line:rgba(255,255,255,.13); --line-soft:rgba(255,255,255,.06); --btc:#f7931a;
+  --bg:#0e0f12; --surface:#16181c; --ink:#e9e7e1; --muted:#9b988f; --faint:#85827b;
+  --line:rgba(255,255,255,.13); --line-soft:rgba(255,255,255,.06); --btc:#f7931a; --btc-text:#f7931a;
   --z-good:#34d399; --z-ok:#a3e635; --z-neutral:#fbbf24; --z-warn:#fb923c; --z-bad:#f87171; }}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
@@ -94,7 +99,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);line
 .row .id{grid-area:id;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .row .nm{font-weight:600;font-size:15px}
 .row .tier{font-family:var(--mono);font-size:9px;font-weight:700;padding:1px 4px;border:1px solid var(--line);color:var(--muted)}
-.row .tier.S{border-color:var(--btc);color:var(--btc)}
+.row .tier.S{border-color:var(--btc);color:var(--btc-text)}
 .row .st{font-size:12px;color:var(--muted)}
 .row .i{margin-left:auto;font-size:13px;line-height:1;color:var(--faint);background:none;border:none;cursor:pointer;padding:2px 6px;min-height:30px}
 .row.open .i{color:var(--ink)}
@@ -190,13 +195,13 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);line
   <header class="mast">
     <div><h1>BITCOIN ACCUMULATION</h1><div class="sub" id="m-sub"></div></div>
     <div class="ctrls">
-      <button class="cbtn" id="langBtn" aria-label="language">EN</button>
+      <button class="cbtn" id="langBtn" title="ภาษา / Language">EN</button>
       <button class="cbtn" id="themeBtn" aria-label="theme"></button>
       <button class="cbtn" id="refresh" aria-label="refresh">↻</button>
     </div>
   </header>
 
-  <div class="cols">
+  <main class="cols">
   <div class="col-a">
   <section class="verdict">
     <div class="gauge">
@@ -269,12 +274,12 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);line
     <div class="bt-note" id="hm-note"></div>
   </section>
   </div><!-- /col-b -->
-  </div><!-- /cols -->
+  </main><!-- /cols -->
 
   <footer class="foot" id="foot"></footer>
 </div>
 
 <script src="indicators.js?v=4"></script>
-<script src="app.js?v=1"></script>
+<script src="app.js?v=2"></script>
 </body>
 </html>

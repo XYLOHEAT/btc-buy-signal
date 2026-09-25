@@ -96,7 +96,7 @@ function applyTheme(mode){const r=document.documentElement;r.classList.remove("d
 function toggleTheme(){const next=DARK()?"light":"dark";localStorage.setItem("theme",next);applyTheme(next);if(COMP&&SNAP)render(lastT);}
 
 /* ---------- colors ---------- */
-const ZHEX={good:["#1c7a47","#34d399"],ok:["#5f7d12","#a3e635"],neutral:["#9a6a00","#fbbf24"],warn:["#bd5a1a","#fb923c"],bad:["#bb2f24","#f87171"]};
+const ZHEX={good:["#1c7a47","#34d399"],ok:["#5a7711","#a3e635"],neutral:["#926500","#fbbf24"],warn:["#ae5318","#fb923c"],bad:["#bb2f24","#f87171"]};
 const band=s=>s>=75?"good":s>=55?"ok":s>=40?"neutral":s>=25?"warn":"bad";
 const hx=k=>ZHEX[k][DARK()?1:0];
 const scoreVar=s=>`var(--z-${band(s)})`;
@@ -124,9 +124,9 @@ async function getRaw(){
   }
   ONCHAIN=RAW.date[RAW.date.length-1];
 }
-async function load(){await getRaw();await recompute();}
-async function recompute(){
-  const t=await ticker();lastT=t;const px=t?t.price:null;
+async function load(){const tp=ticker();await getRaw();await recompute(tp);} // live price + data.json in parallel
+async function recompute(tp){
+  const t=await(tp||ticker());lastT=t;const px=t?t.price:null;
   const data=px?Indicators.appendToday(RAW,px):{...RAW};COMP=Indicators.computeAll(data);ONCHAIN_FRESH="";
   if(FRESH){const li=COMP.price.length-1;
     if(Number.isFinite(FRESH.mvrv))COMP.mvrv_z[li]=FRESH.mvrv;
@@ -191,7 +191,7 @@ function render(t){
   if(t&&Number.isFinite(t.chg)){chg.className="chg "+(t.chg>=0?"up":"down");chg.textContent=(t.chg>=0?"+":"−")+Math.abs(t.chg).toFixed(2)+"% 24H";}else chg.textContent="";
   const now=new Date().toLocaleTimeString(LANG==="th"?"th-TH":"en-GB",{hour:"2-digit",minute:"2-digit"});
   const ocDate=ONCHAIN_FRESH||ONCHAIN,ocDays=Math.round((Date.now()-Date.parse(ocDate+"T00:00:00Z"))/86400000);
-  let line2=l.onchain(esc(ocDate),ocDays);if(ocDays>7)line2+=l.stale;
+  let line2=l.onchain(esc(ocDate),ocDays);if(ocDays>10)line2+=l.stale; // bitcoin-data free tier lags 7d (since 2026-09); warn only beyond that
   document.getElementById("asof").innerHTML=(t?l.priceLive(now):l.priceOff)+"<br>"+line2;
 
   const cur=band(SNAP.overall),sl=document.getElementById("scale");sl.innerHTML="";
@@ -326,8 +326,9 @@ const halvingPlugin={id:"hv",afterDatasetsDraw(ch){
 }};
 
 function drawChart(){
+  if(!window.Chart){document.getElementById("chartjs").addEventListener("load",drawChart,{once:true});return;} // Chart.js is deferred; a CDN failure leaves the page usable, just chartless
   const N=COMP.date.length,start=Math.max(0,N-curRange),labels=COMP.date.slice(start),ink=inkHex();
-  const grid={color:DARK()?"rgba(255,255,255,.07)":"rgba(20,20,16,.07)"},ticks={color:DARK()?"#6c6960":"#8a8a83",font:{size:10,family:"JetBrains Mono"},maxTicksLimit:5};
+  const grid={color:DARK()?"rgba(255,255,255,.07)":"rgba(20,20,16,.07)"},ticks={color:DARK()?"#85827b":"#6e6e69",font:{size:10,family:"JetBrains Mono"},maxTicksLimit:5};
   const mk=(la,arr,color,w=1.8,dash=null)=>({label:la,data:arr.slice(start),borderColor:color,borderWidth:w,borderDash:dash||[],pointRadius:0,tension:.2,spanGaps:true,fill:false});
   let datasets=[],logY=false;
   if(curKey==="price"){logY=true;datasets=[mk("BTC",COMP.price,ink,2),mk("200W MA",COMP.ma200w,btcHex(),1.6),mk("200D MA",COMP.ma200,DARK()?"#6c6960":"#a9a9a2",1,[4,4])];
@@ -337,7 +338,7 @@ function drawChart(){
   else if(curKey==="pi_ratio"){logY=true;datasets=[mk("111D",COMP.ma111,ink,1.8),mk("2×350D",COMP.ma350x2,hx("bad"),1.6)];}
   else{const s=Indicators.INDICES.find(x=>x.key===curKey);datasets=[mk(s.title,COMP[curKey],ink,2)];s.bands.forEach(b=>datasets.push({label:b.label,data:labels.map(()=>b.y),borderColor:b.color,borderWidth:1,borderDash:[5,4],pointRadius:0,fill:false}));}
   if(chart)chart.destroy();
-  chart=new Chart(document.getElementById("chart"),{type:"line",data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,animation:{duration:matchMedia("(prefers-reduced-motion: reduce)").matches?0:500},interaction:{mode:"index",intersect:false},
+  chart=new Chart(document.getElementById("chart"),{type:"line",data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,animation:false /* per-point animations made each draw ~15x slower (TBT/INP) */,interaction:{mode:"index",intersect:false},
     plugins:{legend:{display:datasets.length>1,labels:{color:DARK()?"#9b988f":"#5f5f5a",font:{size:10,family:"JetBrains Mono"},boxWidth:14,boxHeight:1,usePointStyle:false}},tooltip:{backgroundColor:DARK()?"#16181c":"#171715",titleColor:"#fafaf8",bodyColor:"#d8d8d2",borderColor:DARK()?"rgba(255,255,255,.12)":"transparent",borderWidth:1,cornerRadius:0,padding:9,titleFont:{family:"JetBrains Mono",size:11},bodyFont:{family:"JetBrains Mono",size:11},displayColors:false}},
     scales:{x:{grid,ticks:{...ticks,maxTicksLimit:4},border:{color:DARK()?"rgba(255,255,255,.13)":"rgba(20,20,16,.14)"}},y:{type:logY?"logarithmic":"linear",grid,ticks,position:"right",border:{display:false}}}},
     plugins:(curKey==="price"||curKey==="score")?[halvingPlugin]:[]});
@@ -351,4 +352,5 @@ document.getElementById("themeBtn").onclick=toggleTheme;
 document.getElementById("langBtn").onclick=()=>setLang(LANG==="th"?"en":"th");
 document.getElementById("refresh").onclick=async function(){this.classList.add("busy");try{await recompute();}catch(e){}this.classList.remove("busy");};
 load().catch(e=>{document.getElementById("ovmsg").outerHTML='<p class="err">'+L().err(esc(e.message))+'</p>';});
-if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+// after load: keeps the SW precache downloads off the first-render critical path
+if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));

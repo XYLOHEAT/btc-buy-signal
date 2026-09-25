@@ -71,7 +71,7 @@ Always run this after touching `indicators.js`. Compare the score before and aft
 
 **Add a new data metric from bitcoin-data.com** → `build_data.py`, add a `bd_last("<endpoint>")` call into the `fresh` dict, then read `FRESH.<key>` in `app.js`. Keep the Action's total bitcoin-data calls in single digits.
 
-**Styling** → `index.html` `<style>`. CSS variables at `:root`; dark mode overrides under `.dk` and the `prefers-color-scheme` block. Desktop two-column layout lives in the `@media (min-width:960px)` block.
+**Styling** → `index.html` `<style>`. CSS variables at `:root`; dark mode overrides under `.dk` and the `prefers-color-scheme` block. Desktop two-column layout lives in the `@media (min-width:960px)` block. Text colors must stay **≥ 4.5:1** against `--bg` and `--surface` in both themes (`--faint` is the floor; use `--btc-text`, not `--btc`, for small orange text). Chart colors are hard-coded hex in `app.js` (`ZHEX`, `drawChart` ticks) — keep them in sync with the CSS variables.
 
 **Section anchors in `app.js`**: `getRaw` 115 · `applyStaticLang` 155 · `render` 180 · `renderDca` 246 · `renderCycle` 259 · `renderHeatmap` 269 · `renderBacktest` 297 · `drawChart` 328.
 
@@ -97,3 +97,7 @@ Trigger manually: `gh workflow run data.yml`.
 - **Binance returns HTTP 451 on GitHub runners** (US geo-block). `build_data.py` falls back to Kraken OHLC. Locally Binance works, so a build that passes on your machine can still fail in CI — check the Action run.
 - **Coin Metrics history can silently stall** (it froze for 2.5 months in 2026). `build_data.py` extends past its end automatically; if months go missing on the heatmap, check `data.json`'s last `date` first.
 - Service worker caching is the usual reason a change "didn't deploy".
+- **bitcoin-data.com's free tier is delayed 7 days** (since 2026-09; responses carry `"delayed": true`). An on-chain date 7–8 days old is normal; the ⚠ stale badge only shows past 10 days.
+- **Keep Chart.js `animation:false`.** Per-point animations made every draw ~15× slower (47 ms → 3 ms on a Mac, roughly 4× worse on a phone) — that was most of Lighthouse's Total Blocking Time, and it hit every chart-tab click too.
+- **Chart.js is `defer`red** (`<script id="chartjs">`); `drawChart()` waits for that tag's `load` event, so a CDN failure leaves the page working, just without the chart. `indicators.js`/`app.js` stay plain scripts at the end of `<body>` so the saved theme applies as early as possible — deferring them adds a wrong-theme flash for users with a manual theme.
+- **Lighthouse**: run it in an Incognito window. Extensions inject scripts that show up as unused JS, long tasks and console errors that aren't ours. GitHub Pages' 10-minute cache headers can't be changed — the service worker covers repeat visits.

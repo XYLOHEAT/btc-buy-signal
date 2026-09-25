@@ -23,6 +23,7 @@ One file, one entry per decision. Newest last. Status: accepted unless noted.
 **Context:** Browser originally fetched a 2.4 MB Coin Metrics CSV per load, plus bitcoin-data.com per load. bitcoin-data.com free tier allows **10 requests/hour per IP** — normal use exhausted it.
 **Decision:** `build_data.py` (stdlib only) runs daily in Actions, bakes history + fresh MVRV-Z/Puell/NUPL/realized-price into a ~400 KB `data.json`, commits it. Browser reads only `data.json` + Binance for live price.
 **Consequences:** Rate limit structurally impossible to hit; 6× smaller payload; the same file can feed other consumers. Cost: on-chain values are up to 24h stale (acceptable — these metrics move slowly), and the repo carries a daily data commit.
+**Update 2026-09:** bitcoin-data.com's free tier now serves data **delayed 7 days** (`"delayed": true`; real-time needs a paid plan). Fresh on-chain values are therefore ~7–8 days old; the UI's stale badge threshold moved from 7 to 10 days so it only fires when the pipeline actually breaks.
 
 ## ADR-005 — Coin Metrics community data, non-commercial only
 **Context:** Free on-chain history is licensed **CC BY-NC 4.0**.
