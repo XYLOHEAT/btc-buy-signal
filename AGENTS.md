@@ -69,7 +69,7 @@ Always run this after touching `indicators.js`. Compare the score before and aft
 
 **Add a new index** → add a compute column in `computeAll()`, then an `INDICES` entry, then TH+EN strings in `app.js` `T` (`status`, `metric`, `read`). The UI loops over `INDICES`, so cards, tooltips and chart tabs appear automatically.
 
-**Edit any visible text** → `app.js`, the `T` object (line 6). `T.th` and `T.en` are parallel; **add to both or the other language silently breaks**. Static labels are wired in `applyStaticLang()` (line 154); dynamic ones inside `render()` (line 179).
+**Edit any visible text** → `app.js`, the `T` object (line 6). Zone names are one vocabulary (`T.*.zone`, ADR-014): valuation words, never stance words; actions go in `T.*.dca`/`act`. No em dashes in copy. `T.th` and `T.en` are parallel; **add to both or the other language silently breaks**. Static labels are wired in `applyStaticLang()` (line 154); dynamic ones inside `render()` (line 179).
 
 **Add a new data metric from bitcoin-data.com** → `build_data.py`, add a `bd_last("<endpoint>")` call into the `fresh` dict, then read `FRESH.<key>` in `app.js`. Keep the Action's total bitcoin-data calls in single digits.
 

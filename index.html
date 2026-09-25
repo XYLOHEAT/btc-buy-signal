@@ -102,6 +102,7 @@ h1,h2{margin:0;text-wrap:balance}
 .insight .ins-row{display:grid;grid-template-columns:auto 1fr;gap:10px;font-size:var(--text-ui);line-height:1.55;padding-top:10px;border-top:1px solid var(--line-soft)}
 .insight .ins-row span{font-size:var(--text-caption);font-weight:600;color:var(--muted);padding-top:1px;white-space:nowrap}
 .insight .ins-row b{font-weight:600}
+.insight .ins-disc{margin:12px 0 0;font-size:var(--text-caption);color:var(--muted)}
 
 /* section headings: real <h2>s in sentence case; text after " · " becomes a quiet subtitle */
 .lbl{font-size:var(--text-subhead);font-weight:700;line-height:1.3;color:var(--ink);margin:40px 0 12px}
@@ -145,6 +146,7 @@ h1,h2{margin:0;text-wrap:balance}
 .bt-row.on{margin:0 -10px;padding:11px 10px;background:var(--line-soft)}
 .bt-row .z{font-weight:600}
 .bt-row .m{font-weight:700;font-size:var(--text-body);text-align:right}
+.bt-row.thin .m{font-weight:600} /* too few non-overlapping periods: shown, not emphasised */
 .bt-row .w{font-size:var(--text-caption);color:var(--muted);text-align:right;min-width:74px}
 .bt-note{font-size:var(--text-caption);color:var(--faint);margin-top:13px;line-height:1.6;max-width:65ch}
 
@@ -220,9 +222,9 @@ h1,h2{margin:0;text-wrap:balance}
       </svg>
       <div class="ctr"><div class="score" id="score">0<span class="max">/100</span></div></div>
     </div>
-    <div class="zone" id="zone">—</div>
+    <div class="zone" id="zone">–</div>
     <div class="zone-th" id="zoneth"></div>
-    <div class="tape"><span id="price">$—</span><span class="chg" id="chg"></span></div>
+    <div class="tape"><span id="price">$–</span><span class="chg" id="chg"></span></div>
     <div class="asof" id="asof"></div>
     <div class="scale" id="scale"></div>
   </section>
@@ -230,17 +232,18 @@ h1,h2{margin:0;text-wrap:balance}
   <div class="layers" id="layers"></div>
 
   <div class="summary">
-    <div><span id="s-price-l"></span><b id="s-price">—</b></div>
-    <div><span id="s-val-l"></span><b id="s-val">—</b></div>
-    <div><span id="s-mom-l"></span><b id="s-mom">—</b></div>
-    <div id="s-rp-wrap" hidden><span id="s-rp-l"></span><b id="s-rp">—</b></div>
-    <div id="s-nupl-wrap" hidden><span id="s-nupl-l"></span><b id="s-nupl">—</b></div>
+    <div><span id="s-price-l"></span><b id="s-price">–</b></div>
+    <div><span id="s-val-l"></span><b id="s-val">–</b></div>
+    <div><span id="s-mom-l"></span><b id="s-mom">–</b></div>
+    <div id="s-rp-wrap" hidden><span id="s-rp-l"></span><b id="s-rp">–</b></div>
+    <div id="s-nupl-wrap" hidden><span id="s-nupl-l"></span><b id="s-nupl">–</b></div>
   </div>
 
   <div class="insight">
     <p id="ins-what"></p>
     <div class="ins-row"><span id="ins-action-l"></span><b id="ins-dca"></b></div>
     <div class="ins-row"><span id="ins-inval-l"></span><b id="ins-inval"></b></div>
+    <p class="ins-disc" id="ins-disc"></p>
   </div>
   </div><!-- /col-a -->
 
@@ -289,6 +292,6 @@ h1,h2{margin:0;text-wrap:balance}
 </div>
 
 <script src="indicators.js?v=5"></script>
-<script src="app.js?v=5"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>

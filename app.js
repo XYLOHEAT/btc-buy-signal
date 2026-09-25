@@ -1,88 +1,104 @@
 const CSV="https://raw.githubusercontent.com/coinmetrics/data/master/csv/btc.csv";
-let RAW=null,COMP=null,SNAP=null,SCORES=null,FRESH=null,ONCHAIN="",ONCHAIN_FRESH="",chart=null,curKey="price",curRange=1460,curH=90,lastT=null;
+let RAW=null,COMP=null,SNAP=null,SCORES=null,FRESH=null,ONCHAIN="",ONCHAIN_FRESH="",chart=null,curKey="price",curRange=1460,curH=365,lastT=null;
 let LANG=localStorage.getItem("lang")||"th";
 
 /* ---------- i18n ---------- */
 const T={
  th:{
-  sub:"ตอนนี้ควรสะสมไหม? · on-chain tier S/A",
-  priceL:"ราคา BTC", valL:"Valuation (on-chain)", momL:"โมเมนตัมระยะสั้น",
-  secIndex:"Index breakdown", secCharts:"Charts", secBt:"Backtest · ผลตอบแทนหลังสัญญาณ",
-  action:"แนวทาง", invalidLbl:"สัญญาณเสียเมื่อ",
-  scale:["แพง","ระวัง","กลาง","สะสม","สะสมมาก"],
-  zone:{"STRONG BUY":"น่าสะสมมาก","ACCUMULATE":"ทยอยสะสม / DCA","NEUTRAL":"เป็นกลาง","CAUTION":"ระวัง · ชะลอ","EXPENSIVE":"แพง · ลดสะสม"},
-  val:s=>s>=75?"ถูกมาก · โซนสะสม":s>=55?"ค่อนข้างถูก":s>=40?"กลาง ๆ":s>=25?"ค่อนข้างแพง":"แพง",
-  mom:up=>up?"แข็งแรง (เหนือ 200DMA)":"อ่อนแอ (ใต้ 200DMA)",
-  what:(z,sc,up,bw)=>`BTC อยู่โซน ${z} เชิง valuation on-chain (score ${sc}/100) — โมเมนตัมระยะสั้น${up?"ยังแข็งแรง":"ยังอ่อนแอ"}${bw?" และราคาต่ำกว่า 200W MA (เทรนด์ยาวยังไม่ยืนยัน)":""}.`,
-  dca:s=>s>=75?"เพิ่ม DCA หนักขึ้น (เช่น 2–3× แผนปกติ) · เก็บ dry powder ไว้บ้างเสมอ ไม่ all-in":s>=55?"DCA เพิ่มเล็กน้อย (~1.5–2× แผนปกติ)":s>=40?"DCA ปกติตามแผน":s>=25?"DCA น้อยลง · รอจังหวะ":"ชะลอสะสม · เลี่ยง leverage",
-  inval:w=>`ราคาหลุด 200W MA ($${w}) ต่อเนื่อง หรือ MVRV-Z พุ่งเข้าโซน top`,
-  priceLive:n=>`<span class="dot"></span>ราคา LIVE ${n} · Binance`, priceOff:"ราคา OFFLINE",
-  onchain:(d,days)=>`on-chain ${d} · ${days<=1?"วันนี้":days+" วันก่อน"}`, stale:` <span class="stale">⚠ เก่า</span>`,
-  btHead:(z,m,h,n,w)=>`โซนตอนนี้ ${z} → ในอดีต median <b>${m}</b> ใน ${h} วัน <span>(${n} ครั้ง · ชนะ ${w}%)</span>`,
-  btWin:(w,n)=>`ชนะ ${w}% · n=${n}`, btN0:"n=0",
-  btNote:"ย้อนหลังเต็มประวัติ (2010+) · median = ผลตอบแทนกลางหลังเกิดสัญญาณ · overlapping windows + ตลาดขาขึ้นยุคแรกดันค่าสูง · n น้อย = ไม่น่าเชื่อถือ · ไม่ใช่การรับประกัน",
-  loading:"ดึงข้อมูล on-chain…", err:m=>`โหลดข้อมูลไม่ได้: ${m}<br>เช็คเน็ตแล้วรีเฟรช`,
-  foot:`Realized price: <a href="https://bitcoin-data.com" target="_blank" rel="noopener">bitcoin-data.com</a> · History: <a href="https://github.com/coinmetrics/data" target="_blank" rel="noopener">Coin Metrics</a> (<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a>) · Price: Binance / Kraken / CoinGecko<br>ใช้ส่วนตัว ไม่เชิงพาณิชย์ · ไม่ใช่คำแนะนำลงทุน · เครื่องมือดูจังหวะสะสม ไม่ใช่สัญญาณซื้อทันที`,
-  status:{ahr999:v=>v<0.45?"ถูกมาก":v<=1.2?"DCA zone":"แพง",mvrv_z:v=>v<0.1?"bottom":v<5?"กลาง":"top zone",wma_mult:v=>v<=1.05?"แตะ 200WMA!":v<3?"ปกติ":"ร้อน",pi_ratio:v=>v<0.7?"ไกล top":v>=0.95?"ใกล้ top!":"กลาง",mayer:v=>v<1?"ถูก":v<2.4?"ปกติ":"ร้อน",puell:v=>v<0.5?"miner bottom":v<4?"ปกติ":"top"},
-  metric:{ahr999:"ดัชนี DCA — เทียบราคากับต้นทุนเฉลี่ย 200 วัน × เส้น fair value. ต่ำ = ถูกเชิงสะสม. ระวัง: อิงราคาล้วน",
-    mvrv_z:"market cap เทียบ realized cap (z-score). <0 = ขาดทุนรวม (bottom), >7 = euphoria (top). แม่นรอบใหญ่",
-    wma_mult:"ราคา ÷ ค่าเฉลี่ย 200 สัปดาห์. ≈1 = แตะพื้นรอบ (จุดสะสมทุกรอบ). หลุดต่อเนื่อง = เทรนด์ยาวเปลี่ยน",
-    pi_ratio:"Pi Cycle — 111DMA เทียบ 2×350DMA. ใกล้ 1 = ใกล้ยอด. ใช้จับ top เป็นหลัก",
-    mayer:"ราคา ÷ 200DMA. <1 = ใต้ค่าเฉลี่ย (ถูก), >2.4 = ร้อนเกิน",
-    puell:"รายได้นักขุด เทียบค่าเฉลี่ยปี. <0.5 = miner capitulation (มัก bottom), >4 = top"},
-  read:{ahr999:"อ่านคะแนน: ≤0.45 = 100 (ถูกสุด) · ~1.2 = 50 · ≥4 = 0 (แพง)",mvrv_z:"อ่านคะแนน: ≤0 = 100 (bottom) · 7 = 0 (top)",wma_mult:"อ่านคะแนน: ≤1.0× = 100 (แตะพื้น) · ≥3× = 0",pi_ratio:"อ่านคะแนน: ≤0.6 = 100 · 1.0 = 0 (ยอด)",mayer:"อ่านคะแนน: ≤0.8 = 100 · ≥2.4 = 0 (ร้อน)",puell:"อ่านคะแนน: ≤0.5 = 100 (miner bottom) · ≥4 = 0"},
-  valueL:"มูลค่า",riskL:"ความเสี่ยงสั้น",actL:"ทำอะไร",riskW:{low:"ต่ำ",med:"กลาง",high:"สูง"},
-  act:{addStrong:"DCA / เพิ่มไม้",dcaGrad:"DCA ทยอย (ถูกแต่เทรนด์อ่อน)",normal:"DCA ปกติ / รอ",hold:"ถือ · ลดไม้ใหม่",reduce:"ลด · เลี่ยง leverage"},
-  rpL:"Realized price (ต้นทุนเฉลี่ย)",nuplL:"NUPL (เซนทิเมนต์)",
-  secDca:"DCA Simulator · ถ้าทำตาม signal จริง",
-  dcaHead:(e,st)=>`DCA ตาม signal ตั้งแต่ ${st} → ต้นทุนเฉลี่ย<b style="color:var(--z-good)">ถูกกว่า ${e}%</b> เทียบ DCA คงที่`,
-  dcaCols:["","ลงทุนรวม","ได้ BTC","ต้นทุนเฉลี่ย"],dcaFlat:"DCA คงที่",dcaSig:"ตาม signal",
-  dcaNote:"จำลอง: ลงทุนทุก 7 วัน ครั้งละ $100 · ตาม signal ปรับไม้เป็น 0.25–2.5× ตาม score (เกณฑ์เดียวกับช่อง \"แนวทาง\") · เทียบที่ต้นทุนเฉลี่ยต่อ BTC · อดีตไม่การันตีอนาคต",
+  sub:"รวม 6 ดัชนีมูลค่าระยะยาวของ Bitcoin เป็นคะแนนเดียว",
+  priceL:"ราคา BTC", valL:"มูลค่าเทียบอดีต", momL:"แนวโน้มระยะสั้น",
+  secIndex:"ดัชนีรายตัว · แต่ละตัวให้คะแนน 0–100 ตัวที่มี ×2 นับน้ำหนักสองเท่า", secCharts:"กราฟย้อนหลัง",
+  secBt:"ผลย้อนหลังตามระดับราคา · ราคาเปลี่ยนไปเท่าไรหลังวันที่อยู่แต่ละระดับ",
+  action:"แนวทาง", invalidLbl:"มุมมองนี้ผิดถ้า",
+  scale:["แพง","ค่อนข้างแพง","กลาง ๆ","ถูก","ถูกมาก"],
+  zone:{"STRONG BUY":"ถูกมาก","ACCUMULATE":"ถูก","NEUTRAL":"กลาง ๆ","CAUTION":"ค่อนข้างแพง","EXPENSIVE":"แพง"},
+  pctl:(p,y)=>`ถูกกว่า ${p}% ของวันตั้งแต่ปี ${y} ตามคะแนนนี้`, scoreAria:n=>`คะแนน ${n} จาก 100`,
+  mom:up=>up?"แข็ง: ราคาอยู่เหนือค่าเฉลี่ย 200 วัน":"อ่อน: ราคาอยู่ใต้ค่าเฉลี่ย 200 วัน",
+  what:(z,sc,up,bw)=>`ดัชนีทั้ง 6 ตัวรวมได้ ${sc}/100 ถือว่า${z}เมื่อเทียบกับอดีต ${up?"ราคายังยืนเหนือค่าเฉลี่ย 200 วัน":"ราคาอยู่ใต้ค่าเฉลี่ย 200 วัน"}${bw?" และต่ำกว่าค่าเฉลี่ย 200 สัปดาห์ แนวโน้มระยะยาวจึงยังไม่ยืนยัน":""}`,
+  dca:s=>s>=75?"DCA มากกว่าปกติ 2–3 เท่า และเก็บเงินสดสำรองไว้เสมอ ไม่ทุ่มหมดครั้งเดียว":s>=55?"DCA มากกว่าปกติเล็กน้อย ราว 1.5–2 เท่า":s>=40?"DCA ตามแผนปกติ":s>=25?"DCA น้อยกว่าปกติ แล้วรอราคาที่ดีกว่า":"หยุดซื้อเพิ่มชั่วคราว และไม่กู้เงินมาลงทุน",
+  inval:w=>`ราคาปิดต่ำกว่าค่าเฉลี่ย 200 สัปดาห์ ($${w}) ต่อเนื่อง หรือ MVRV Z-Score ขึ้นไปเกิน 7 (ระดับที่เคยเป็นยอดรอบ)`,
+  disc:"ข้อมูลประกอบการตัดสินใจ ไม่ใช่คำแนะนำการลงทุน",
+  priceLive:n=>`<span class="dot"></span>ราคาสด ${n} · Binance`, priceOff:"ดึงราคาสดไม่ได้ แสดงราคาปิดล่าสุดแทน", d24:"24 ชม.",
+  onchain:(d,days)=>`ข้อมูล on-chain ถึง ${d} · ${days<=1?"วันนี้":days+" วันก่อน"}`, stale:` <span class="stale">⚠ เก่ากว่าปกติ</span>`,
+  hz:["1 เดือน","3 เดือน","6 เดือน","1 ปี"],
+  btHead:(z,m,h,n,w)=>`วันที่อยู่ระดับ${z}แบบวันนี้ อีก ${h}ต่อมาราคาเปลี่ยนไป <b>${m}</b> (ค่ากลาง) <span>จาก ${n} วัน · ราคาขึ้น ${w}% ของครั้ง</span>`,
+  btWin:(w,n)=>`ขึ้น ${w}% · ${n} วัน`, btThin:n=>`ข้อมูลน้อย · ${n} วัน`, btThinNow:"ระดับนี้ข้อมูลยังน้อย อย่าเพิ่งเชื่อตัวเลขนี้มาก", btN0:"ไม่มีข้อมูล",
+  btNote:"นับทุกวันตั้งแต่ปี 2014 ที่มีคะแนนครบ แล้วดูราคาหลังจากนั้นตามระยะที่เลือก · ค่ากลาง (median) คือผลตรงกลางของทุกวันในระดับนั้น · วันที่ติดกันใช้ช่วงเวลาซ้อนกัน แถวสีเทาคือระดับที่มีช่วงไม่ซ้อนกันไม่ถึง 3 ช่วง ยังเชื่อถือไม่ได้ · ผลในอดีตไม่รับประกันอนาคต",
+  loading:"กำลังโหลดราคาและข้อมูล on-chain…", err:m=>`โหลดข้อมูลไม่สำเร็จ ตรวจสอบอินเทอร์เน็ตแล้วรีเฟรชหน้านี้อีกครั้ง<br><small>${m}</small>`,
+  foot:`ต้นทุนเฉลี่ยตลาด: <a href="https://bitcoin-data.com" target="_blank" rel="noopener">bitcoin-data.com</a> (ช้าราว 7 วัน) · ประวัติ: <a href="https://github.com/coinmetrics/data" target="_blank" rel="noopener">Coin Metrics</a> (<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a>) · ราคา: Binance / Kraken / CoinGecko<br>ใช้ส่วนตัว ไม่เชิงพาณิชย์`,
+  status:{ahr999:v=>v<0.45?"ถูกมาก":v<=1.2?"โซน DCA":"แพง",mvrv_z:v=>v<0.1?"ใกล้ก้นรอบ":v<5?"กลาง ๆ":"ใกล้ยอดรอบ",wma_mult:v=>v<=1.05?"แตะเส้น 200 สัปดาห์":v<3?"ปกติ":"ร้อนแรง",pi_ratio:v=>v<0.7?"ไกลจากยอด":v>=0.95?"ใกล้ยอด":"กลาง ๆ",mayer:v=>v<1?"ถูก":v<2.4?"ปกติ":"ร้อนแรง",puell:v=>v<0.5?"ใกล้ก้นรอบ":v<4?"ปกติ":"ใกล้ยอดรอบ"},
+  metric:{ahr999:"เทียบราคากับต้นทุนเฉลี่ยของการ DCA 200 วัน และกับเส้นราคาตามการเติบโตระยะยาว ยิ่งต่ำยิ่งถูก คิดจากราคาอย่างเดียว",
+    mvrv_z:"มูลค่าตลาดเทียบกับต้นทุนรวมที่ทุกคนซื้อเหรียญมา ต่ำกว่า 0 คือตลาดโดยรวมขาดทุน มักใกล้ก้นรอบ เกิน 7 คือร้อนแรงเกิน มักใกล้ยอดรอบ แม่นกับรอบใหญ่",
+    wma_mult:"ราคาหารด้วยค่าเฉลี่ย 200 สัปดาห์ (ราว 4 ปี) ใกล้ 1 คือแตะพื้นของรอบ ซึ่งเป็นจุดสะสมที่ดีในทุกรอบที่ผ่านมา ถ้าหลุดลงไปต่อเนื่อง แนวโน้มระยะยาวเปลี่ยน",
+    pi_ratio:"ค่าเฉลี่ย 111 วัน เทียบกับ 2 เท่าของค่าเฉลี่ย 350 วัน ค่าแตะ 1 เคยตรงกับยอดรอบทุกครั้ง ใช้เตือนยอด บอกก้นไม่ได้",
+    mayer:"ราคาหารด้วยค่าเฉลี่ย 200 วัน ต่ำกว่า 1 คืออยู่ใต้ค่าเฉลี่ย (ถูก) เกิน 2.4 คือร้อนแรงเกิน",
+    puell:"รายได้ต่อวันของนักขุดเทียบค่าเฉลี่ย 1 ปี ต่ำกว่า 0.5 คือรายได้ตกจนนักขุดต้องขายเหรียญ มักใกล้ก้นรอบ เกิน 4 คือกำไรสูงผิดปกติ มักใกล้ยอดรอบ"},
+  read:{ahr999:"คะแนน: ≤0.45 ได้ 100 · 1.2 ได้ 50 · ≥4 ได้ 0",mvrv_z:"คะแนน: ≤0 ได้ 100 · ≥7 ได้ 0",wma_mult:"คะแนน: ≤1.0× ได้ 100 · ≥3× ได้ 0",pi_ratio:"คะแนน: ≤0.6 ได้ 100 · ≥1.0 ได้ 0",mayer:"คะแนน: ≤0.8 ได้ 100 · ≥2.4 ได้ 0",puell:"คะแนน: ≤0.5 ได้ 100 · ≥4 ได้ 0"},
+  valueL:"มูลค่า",riskL:"ความเสี่ยงระยะสั้น",actL:"ควรทำ",riskW:{low:"ต่ำ",med:"กลาง",high:"สูง"},
+  riskSub:(up,bw)=>(up?"เหนือค่าเฉลี่ย 200 วัน":"ใต้ค่าเฉลี่ย 200 วัน")+(bw?" · ใต้ 200 สัปดาห์":""),
+  act:{addStrong:"DCA มากขึ้น",dcaGrad:"ทยอย DCA",normal:"DCA ตามปกติ",hold:"ถือไว้ ชะลอซื้อ",reduce:"หยุดซื้อเพิ่ม"},
+  rpL:"ต้นทุนเฉลี่ยตลาด (realized price)",nuplL:"อารมณ์ตลาด (NUPL)",nuplPh:["ยอมแพ้","หวังปนกลัว","มองบวก","มั่นใจ","คลั่งไคล้"],
+  secDca:"จำลอง DCA · ถ้าปรับจำนวนซื้อตามคะแนนนี้",
+  dcaHead:(e,st)=>`เริ่มปี ${st} ถ้าปรับจำนวนซื้อตามคะแนน ต้นทุนเฉลี่ยต่อ BTC จะ<b style="color:var(--z-${e>=0?"good":"bad"})">${e>=0?"ต่ำกว่า":"สูงกว่า"} ${Math.abs(e).toFixed(1)}%</b> เทียบกับซื้อเท่ากันทุกครั้ง`,
+  dcaCols:["","ลงทุนรวม","ได้ BTC","ต้นทุนเฉลี่ย"],dcaFlat:"ซื้อเท่ากันทุกครั้ง",dcaSig:"ปรับตามคะแนน",
+  dcaNote:"จำลองซื้อทุก 7 วัน ครั้งละ $100 · แบบปรับตามคะแนนซื้อ 0.25–2.5 เท่าของ $100 ตามระดับ (เกณฑ์เดียวกับแนวทาง) · เทียบที่ต้นทุนเฉลี่ยต่อ BTC เพราะเงินลงทุนรวมไม่เท่ากัน · ผลในอดีตไม่รับประกันอนาคต",
+  all:"ทั้งหมด", allStart:"แรกสุด", ranges:["1 ปี","4 ปี"], tabPrice:"ราคา", tabScore:"คะแนน",
+  lg:{btc:"BTC",w200:"เฉลี่ย 200 สัปดาห์",d200:"เฉลี่ย 200 วัน",cheap:"วันที่ถูกมาก",rp:"ต้นทุนเฉลี่ยตลาด",score:"คะแนน",ma111:"เฉลี่ย 111 วัน",ma350:"2× เฉลี่ย 350 วัน"},
   secCyc:"ตอนนี้คล้ายช่วงไหนในอดีต",
-  cycRow:(d,s,f90,f365)=>`<b>${d}</b> <span style="color:var(--muted)">คล้าย ${s}%</span> → 90 วันถัดมา <b>${f90}</b> · 1 ปี <b>${f365}</b>`,
-  cycNote:"เทียบรูปทรง+ระดับของ score 90 วันล่าสุดกับทุกช่วงในอดีต (เว้นปีล่าสุด) · ความคล้ายไม่ใช่เหตุผล ราคาไม่จำเป็นต้องซ้ำรอย",
-  secHm:"Signal heatmap · ค่าเฉลี่ยรายเดือน",
-  hmNote:"สี = โซนเฉลี่ยของเดือน (เขียว = น่าสะสม · แดง = แพง) · ⛏ = halving",
+  cycRow:(d,s,f90,f365)=>`<b>${d}</b> <span style="color:var(--muted)">คล้าย ${s}%</span> · อีก 90 วันราคา <b>${f90}</b> · 1 ปี <b>${f365}</b>`,
+  cycNote:"เทียบรูปร่างและระดับของคะแนน 90 วันล่าสุดกับทุกช่วงในอดีต (ไม่นับปีล่าสุด) · คล้ายกันไม่ได้แปลว่าราคาจะเดินซ้ำ",
+  secHm:"คะแนนรายเดือน · แต่ละช่องคือระดับเฉลี่ยของเดือนนั้น",
+  hmNote:"เขียว = ถูก · แดง = แพง · ⛏ = เดือนที่เกิด halving (รางวัลการขุดลดลงครึ่งหนึ่ง)",
+  info:t=>`เกี่ยวกับ ${t}`, weight:w=>`นับน้ำหนัก ${w} เท่าในคะแนนรวม`,
+  themeToDark:"เปลี่ยนเป็นโหมดมืด", themeToLight:"เปลี่ยนเป็นโหมดสว่าง", refresh:"อัปเดตราคาสด", lang:"Switch to English",
  },
  en:{
-  sub:"Should you accumulate now? · on-chain tier S/A",
-  priceL:"BTC price", valL:"Valuation (on-chain)", momL:"Short-term momentum",
-  secIndex:"Index breakdown", secCharts:"Charts", secBt:"Backtest · forward return",
-  action:"Action", invalidLbl:"Invalidated if",
-  scale:["Expensive","Caution","Neutral","Accumulate","Strong"],
-  zone:{"STRONG BUY":"Strong accumulation","ACCUMULATE":"Accumulate / DCA","NEUTRAL":"Neutral","CAUTION":"Caution · slow down","EXPENSIVE":"Expensive · reduce"},
-  val:s=>s>=75?"Very cheap · accumulation":s>=55?"Fairly cheap":s>=40?"Mid":s>=25?"Fairly expensive":"Expensive",
-  mom:up=>up?"Strong (above 200DMA)":"Weak (below 200DMA)",
-  what:(z,sc,up,bw)=>`BTC is in a ${z} zone by on-chain valuation (score ${sc}/100). Short-term momentum is ${up?"still strong":"still weak"}${bw?", and price is below the 200W MA (long-term trend unconfirmed)":""}.`,
-  dca:s=>s>=75?"Increase DCA (e.g. 2–3× your usual) · always keep some dry powder, not all-in":s>=55?"Slightly increase DCA (~1.5–2×)":s>=40?"Normal DCA":s>=25?"Reduce DCA · wait":"Pause accumulation · avoid leverage",
-  inval:w=>`Price loses 200W MA ($${w}) on a sustained basis, or MVRV-Z spikes into top zone`,
-  priceLive:n=>`<span class="dot"></span>Price LIVE ${n} · Binance`, priceOff:"Price OFFLINE",
-  onchain:(d,days)=>`on-chain ${d} · ${days<=1?"today":days+" days ago"}`, stale:` <span class="stale">⚠ stale</span>`,
-  btHead:(z,m,h,n,w)=>`Now in ${z} → historically median <b>${m}</b> over ${h} days <span>(${n}× · ${w}% win)</span>`,
-  btWin:(w,n)=>`${w}% win · n=${n}`, btN0:"n=0",
-  btNote:"Full history (2010+) · median = forward return after the signal · overlapping windows + early bull market inflate it · low n = unreliable · not a guarantee",
-  loading:"Loading on-chain data…", err:m=>`Couldn't load data: ${m}<br>Check connection and refresh`,
-  foot:`Realized price: <a href="https://bitcoin-data.com" target="_blank" rel="noopener">bitcoin-data.com</a> · History: <a href="https://github.com/coinmetrics/data" target="_blank" rel="noopener">Coin Metrics</a> (<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a>) · Price: Binance / Kraken / CoinGecko<br>Personal, non-commercial · not financial advice · accumulation-timing tool, not an instant buy signal`,
-  status:{ahr999:v=>v<0.45?"very cheap":v<=1.2?"DCA zone":"expensive",mvrv_z:v=>v<0.1?"bottom":v<5?"mid":"top zone",wma_mult:v=>v<=1.05?"at 200WMA!":v<3?"normal":"hot",pi_ratio:v=>v<0.7?"far from top":v>=0.95?"near top!":"mid",mayer:v=>v<1?"cheap":v<2.4?"normal":"hot",puell:v=>v<0.5?"miner bottom":v<4?"normal":"top"},
-  metric:{ahr999:"DCA index — price vs 200-day cost basis × fair-value fit. Low = cheap to accumulate. Note: price-only",
-    mvrv_z:"Market cap vs realized cap (z-score). <0 = aggregate loss (bottom), >7 = euphoria (top). Accurate on big cycles",
-    wma_mult:"Price ÷ 200-week MA. ≈1 = cycle floor (a buy zone every past cycle). Sustained break = trend change",
-    pi_ratio:"Pi Cycle — 111DMA vs 2×350DMA. Near 1 = near top. Mainly for tops",
-    mayer:"Price ÷ 200DMA. <1 = below average (cheap), >2.4 = overheated",
-    puell:"Miner revenue vs yearly average. <0.5 = miner capitulation (often a bottom), >4 = top"},
-  read:{ahr999:"Score: ≤0.45 = 100 (cheapest) · ~1.2 = 50 · ≥4 = 0 (expensive)",mvrv_z:"Score: ≤0 = 100 (bottom) · 7 = 0 (top)",wma_mult:"Score: ≤1.0× = 100 (floor) · ≥3× = 0",pi_ratio:"Score: ≤0.6 = 100 · 1.0 = 0 (top)",mayer:"Score: ≤0.8 = 100 · ≥2.4 = 0 (hot)",puell:"Score: ≤0.5 = 100 (miner bottom) · ≥4 = 0"},
-  valueL:"Value",riskL:"Short-term risk",actL:"Action",riskW:{low:"Low",med:"Medium",high:"High"},
-  act:{addStrong:"DCA / add",dcaGrad:"DCA gradually (cheap, weak trend)",normal:"Normal DCA / wait",hold:"Hold · trim adds",reduce:"Reduce · avoid leverage"},
-  rpL:"Realized price (cost basis)",nuplL:"NUPL (sentiment)",
-  secDca:"DCA Simulator · if you followed the signal",
-  dcaHead:(e,st)=>`Signal-DCA since ${st} → avg cost <b style="color:var(--z-good)">${e}% cheaper</b> than flat DCA`,
-  dcaCols:["","Invested","BTC stacked","Avg cost"],dcaFlat:"Flat DCA",dcaSig:"Signal DCA",
-  dcaNote:"Simulation: $100 every 7 days · signal version scales each buy 0.25–2.5× by score (same rule as the Action row) · compared on avg cost per BTC · past ≠ future",
-  secCyc:"Which past period looks like now",
-  cycRow:(d,s,f90,f365)=>`<b>${d}</b> <span style="color:var(--muted)">${s}% similar</span> → next 90d <b>${f90}</b> · 1y <b>${f365}</b>`,
-  cycNote:"Matches shape+level of the last 90d of the score vs all history (latest year excluded) · similarity is not causality",
-  secHm:"Signal heatmap · monthly average",
-  hmNote:"Color = the month's average zone (green = accumulate · red = expensive) · ⛏ = halving",
+  sub:"Six long-term Bitcoin valuation indices, one score",
+  priceL:"BTC price", valL:"Valuation vs history", momL:"Short-term trend",
+  secIndex:"Index breakdown · each scores 0–100; ×2 indices count double", secCharts:"History",
+  secBt:"Backtest · how price moved after days at each level",
+  action:"What to do", invalidLbl:"This view is wrong if",
+  scale:["Expensive","Pricey","Fair","Cheap","Very cheap"],
+  zone:{"STRONG BUY":"Very cheap","ACCUMULATE":"Cheap","NEUTRAL":"Fair","CAUTION":"Pricey","EXPENSIVE":"Expensive"},
+  pctl:(p,y)=>`By this score, cheaper than ${p}% of days since ${y}`, scoreAria:n=>`Score ${n} out of 100`,
+  mom:up=>up?"Strong: above the 200-day average":"Weak: below the 200-day average",
+  what:(z,sc,up,bw)=>`The six indices combine to ${sc}/100: ${z} compared with history. ${up?"Price is holding above its 200-day average":"Price is below its 200-day average"}${bw?", and below its 200-week average, so the long-term trend is not confirmed":""}.`,
+  dca:s=>s>=75?"DCA 2–3× your usual amount, and always keep some cash in reserve instead of going all in":s>=55?"DCA a little more than usual, about 1.5–2×":s>=40?"DCA your usual amount":s>=25?"DCA less than usual and wait for better prices":"Pause new buys, and don't borrow to invest",
+  inval:w=>`Price keeps closing below its 200-week average ($${w}), or MVRV Z-Score climbs above 7 (where past cycles topped)`,
+  disc:"Context for your own decision, not financial advice.",
+  priceLive:n=>`<span class="dot"></span>Live price ${n} · Binance`, priceOff:"Live price unavailable, showing the last close", d24:"24h",
+  onchain:(d,days)=>`On-chain data to ${d} · ${days<=1?"today":days+" days ago"}`, stale:` <span class="stale">⚠ older than usual</span>`,
+  hz:["1 month","3 months","6 months","1 year"],
+  btHead:(z,m,h,n,w)=>`On past ${z} days like today, price ${h} later moved <b>${m}</b> (median) <span>across ${n} days · up ${w}% of the time</span>`,
+  btWin:(w,n)=>`up ${w}% · ${n} days`, btThin:n=>`thin data · ${n} days`, btThinNow:"thin data at this level, treat with caution", btN0:"no data",
+  btNote:"Every day since 2014 with a full score, then the price change after the chosen period · median = the middle result of all days at that level · consecutive days share overlapping periods, so grey rows have fewer than 3 non-overlapping periods and can't be trusted yet · past results don't guarantee the future",
+  loading:"Loading price and on-chain data…", err:m=>`Couldn't load the data. Check your connection, then refresh this page.<br><small>${m}</small>`,
+  foot:`Market cost basis: <a href="https://bitcoin-data.com" target="_blank" rel="noopener">bitcoin-data.com</a> (about 7 days behind) · History: <a href="https://github.com/coinmetrics/data" target="_blank" rel="noopener">Coin Metrics</a> (<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a>) · Price: Binance / Kraken / CoinGecko<br>Personal, non-commercial`,
+  status:{ahr999:v=>v<0.45?"Very cheap":v<=1.2?"DCA zone":"Expensive",mvrv_z:v=>v<0.1?"Near cycle low":v<5?"Mid":"Near cycle top",wma_mult:v=>v<=1.05?"At the 200-week line":v<3?"Normal":"Hot",pi_ratio:v=>v<0.7?"Far from top":v>=0.95?"Near top":"Mid",mayer:v=>v<1?"Cheap":v<2.4?"Normal":"Hot",puell:v=>v<0.5?"Near cycle low":v<4?"Normal":"Near cycle top"},
+  metric:{ahr999:"Compares price with the average cost of a 200-day DCA and with a long-term growth curve. Lower is cheaper. Price-only.",
+    mvrv_z:"Market value against what all holders paid for their coins. Below 0, the market as a whole is at a loss, usually near a cycle low. Above 7 it is overheated, usually near a top. Reliable on big cycles.",
+    wma_mult:"Price divided by the 200-week (about 4-year) average. Near 1 is the cycle floor, a good accumulation point in every past cycle. A sustained break below it means the long-term trend has changed.",
+    pi_ratio:"The 111-day average against twice the 350-day average. Reaching 1 has matched every past cycle top. It warns of tops; it can't find bottoms.",
+    mayer:"Price divided by the 200-day average. Below 1 is under the average (cheap); above 2.4 is overheated.",
+    puell:"Miners' daily revenue against its 1-year average. Below 0.5, revenue has collapsed and miners sell, usually near a cycle low. Above 4, profits are unusually high, usually near a top."},
+  read:{ahr999:"Score: ≤0.45 gets 100 · 1.2 gets 50 · ≥4 gets 0",mvrv_z:"Score: ≤0 gets 100 · ≥7 gets 0",wma_mult:"Score: ≤1.0× gets 100 · ≥3× gets 0",pi_ratio:"Score: ≤0.6 gets 100 · ≥1.0 gets 0",mayer:"Score: ≤0.8 gets 100 · ≥2.4 gets 0",puell:"Score: ≤0.5 gets 100 · ≥4 gets 0"},
+  valueL:"Value",riskL:"Short-term risk",actL:"What to do",riskW:{low:"Low",med:"Medium",high:"High"},
+  riskSub:(up,bw)=>(up?"Above 200-day avg":"Below 200-day avg")+(bw?" · below 200-week":""),
+  act:{addStrong:"DCA more",dcaGrad:"DCA gradually",normal:"DCA as usual",hold:"Hold, slow buys",reduce:"Pause buys"},
+  rpL:"Market cost basis (realized price)",nuplL:"Market mood (NUPL)",nuplPh:["Capitulation","Hope / fear","Optimism","Belief","Euphoria"],
+  secDca:"DCA simulator · if you had scaled buys by this score",
+  dcaHead:(e,st)=>`Starting in ${st}, scaling buys by the score gives an average cost per BTC <b style="color:var(--z-${e>=0?"good":"bad"})">${Math.abs(e).toFixed(1)}% ${e>=0?"lower":"higher"}</b> than buying the same amount every time`,
+  dcaCols:["","Invested","BTC bought","Avg cost"],dcaFlat:"Same amount",dcaSig:"Scaled by score",
+  dcaNote:"Simulated buys every 7 days at $100 · the scaled version buys 0.25–2.5× that amount by level (same rule as What to do) · compared on average cost per BTC, because the totals invested differ · past results don't guarantee the future",
+  all:"All", allStart:"the start", ranges:["1 year","4 years"], tabPrice:"Price", tabScore:"Score",
+  lg:{btc:"BTC",w200:"200-week avg",d200:"200-day avg",cheap:"Very cheap days",rp:"Market cost basis",score:"Score",ma111:"111-day avg",ma350:"2× 350-day avg"},
+  secCyc:"Past periods most like now",
+  cycRow:(d,s,f90,f365)=>`<b>${d}</b> <span style="color:var(--muted)">${s}% similar</span> · price 90 days later <b>${f90}</b> · 1 year later <b>${f365}</b>`,
+  cycNote:"Compares the shape and level of the last 90 days of the score with every past period (excluding the latest year) · similar doesn't mean price will repeat",
+  secHm:"Monthly score · each cell is that month's average level",
+  hmNote:"Green = cheap · red = expensive · ⛏ = halving month (the mining reward is cut in half)",
+  info:t=>`About ${t}`, weight:w=>`Counts ${w}× in the overall score`,
+  themeToDark:"Switch to dark mode", themeToLight:"Switch to light mode", refresh:"Refresh live price", lang:"เปลี่ยนเป็นภาษาไทย",
  }
 };
 const L=()=>T[LANG];
@@ -92,7 +108,8 @@ const SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wid
 const MOON='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
 const DARK=()=>document.documentElement.classList.contains("dk")?true:document.documentElement.classList.contains("lt")?false:matchMedia("(prefers-color-scheme: dark)").matches;
 function applyTheme(mode){const r=document.documentElement;r.classList.remove("dk","lt");if(mode==="dark")r.classList.add("dk");else if(mode==="light")r.classList.add("lt");
-  document.getElementById("themeBtn").innerHTML=DARK()?SUN:MOON;}
+  themeBtnSync();}
+function themeBtnSync(){const b=document.getElementById("themeBtn");b.innerHTML=DARK()?SUN:MOON;b.setAttribute("aria-label",DARK()?L().themeToLight:L().themeToDark);}
 function toggleTheme(){const next=DARK()?"light":"dark";localStorage.setItem("theme",next);applyTheme(next);if(COMP&&SNAP)render(lastT);}
 
 /* ---------- colors ---------- */
@@ -102,7 +119,7 @@ const hx=k=>ZHEX[k][DARK()?1:0];
 const scoreVar=s=>`var(--z-${band(s)})`;
 const inkHex=()=>DARK()?"#e9e7e1":"#171715";
 const btcHex=()=>DARK()?"#f7931a":"#c96b08";
-const nuplPhase=v=>v<0?"Capitulation":v<0.25?"Hope/Fear":v<0.5?"Optimism":v<0.75?"Belief/Denial":"Euphoria";
+const nuplPhase=v=>L().nuplPh[v<0?0:v<0.25?1:v<0.5?2:v<0.75?3:4];
 /* escape any data-sourced string before it enters innerHTML (defense-in-depth vs upstream tampering) */
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
@@ -172,7 +189,9 @@ function applyStaticLang(){const l=L();
   document.getElementById("hm-note").innerHTML=l.hmNote;
   document.getElementById("foot").innerHTML=l.foot;
   const ov=document.getElementById("ovmsg");if(ov)ov.textContent=l.loading;
-  document.getElementById("langBtn").textContent=LANG==="th"?"EN":"ไทย";
+  const lb=document.getElementById("langBtn");lb.textContent=LANG==="th"?"EN":"ไทย";lb.title=l.lang;
+  document.getElementById("refresh").setAttribute("aria-label",l.refresh);themeBtnSync();
+  document.getElementById("ins-disc").textContent=l.disc;
 }
 function setLang(x){LANG=x;localStorage.setItem("lang",x);applyStaticLang();if(COMP&&SNAP)render(lastT);}
 
@@ -182,13 +201,16 @@ function render(t){
   const arc=document.getElementById("arc");arc.style.stroke=col;arc.setAttribute("stroke-dasharray",C);arc.setAttribute("stroke-dashoffset",C);
   requestAnimationFrame(()=>arc.setAttribute("stroke-dashoffset",C*(1-SNAP.overall/100)));
   const sc=document.getElementById("score");sc.style.color=col;countUp(sc,SNAP.overall);
-  const z=document.getElementById("zone");z.textContent=ZT(SNAP.label);z.style.color=col;
-  document.getElementById("zoneth").textContent=l.zone[SNAP.label];
+  const z=document.getElementById("zone");z.textContent=l.zone[SNAP.label];z.style.color=col;
+  // percentile: share of all scored days with a lower score, i.e. days that were more expensive than today
+  const past=SCORES.filter(Number.isFinite),pctl=Math.round(100*past.filter(v=>v<SNAP.overall).length/past.length);
+  document.getElementById("zoneth").textContent=l.pctl(pctl,COMP.date[SCORES.findIndex(Number.isFinite)].slice(0,4));
+  document.querySelector('.gauge svg[role="img"]').setAttribute("aria-label",l.scoreAria(Math.round(SNAP.overall)));
   coin(SNAP.label);
 
   document.getElementById("price").textContent="$"+Math.round(SNAP.price).toLocaleString("en-US");
   const chg=document.getElementById("chg");
-  if(t&&Number.isFinite(t.chg)){chg.className="chg "+(t.chg>=0?"up":"down");chg.textContent=(t.chg>=0?"+":"−")+Math.abs(t.chg).toFixed(2)+"% 24h";}else chg.textContent="";
+  if(t&&Number.isFinite(t.chg)){chg.className="chg "+(t.chg>=0?"up":"down");chg.textContent=(t.chg>=0?"+":"−")+Math.abs(t.chg).toFixed(2)+"% "+l.d24;}else chg.textContent="";
   const now=new Date().toLocaleTimeString(LANG==="th"?"th-TH":"en-GB",{hour:"2-digit",minute:"2-digit"});
   const ocDate=ONCHAIN_FRESH||ONCHAIN,ocDays=Math.round((Date.now()-Date.parse(ocDate+"T00:00:00Z"))/86400000);
   let line2=l.onchain(esc(ocDate),ocDays);if(ocDays>10)line2+=l.stale; // bitcoin-data free tier lags 7d (since 2026-09); warn only beyond that
@@ -199,7 +221,7 @@ function render(t){
 
   const up=SNAP.values.mayer>=1,belowW=SNAP.values.wma_mult<1;
   document.getElementById("s-price").textContent="$"+Math.round(SNAP.price).toLocaleString("en-US")+(t&&Number.isFinite(t.chg)?`  ${t.chg>=0?"+":"−"}${Math.abs(t.chg).toFixed(1)}%`:"");
-  const sv=document.getElementById("s-val");sv.textContent=l.val(SNAP.overall);sv.style.color=scoreVar(SNAP.overall);
+  const sv=document.getElementById("s-val");sv.textContent=l.zone[SNAP.label];sv.style.color=scoreVar(SNAP.overall);
   const sm=document.getElementById("s-mom");sm.textContent=l.mom(up);sm.style.color=up?"var(--z-good)":"var(--z-warn)";
   // realized price + NUPL (baked into data.json by the daily Action; shown only if present)
   const rpW=document.getElementById("s-rp-wrap"),nuW=document.getElementById("s-nupl-wrap");
@@ -211,25 +233,25 @@ function render(t){
   const actText=SNAP.overall>=55?(riskKey==="low"?l.act.addStrong:l.act.dcaGrad):SNAP.overall>=40?l.act.normal:(riskKey==="high"?l.act.reduce:l.act.hold);
   const riskCol=riskKey==="low"?"var(--z-good)":riskKey==="med"?"var(--z-neutral)":"var(--z-bad)";
   document.getElementById("layers").innerHTML=
-    `<div class="cell"><div class="k">${l.valueL}</div><div class="v" style="color:${scoreVar(SNAP.overall)}">${SNAP.overall.toFixed(0)}</div><div class="vs">${l.val(SNAP.overall)}</div></div>
-     <div class="cell"><div class="k">${l.riskL}</div><div class="v" style="color:${riskCol}">${l.riskW[riskKey]}</div><div class="vs">${up?"≥200DMA":"<200DMA"}${belowW?" · <200WMA":""}</div></div>
+    `<div class="cell"><div class="k">${l.valueL}</div><div class="v" style="color:${scoreVar(SNAP.overall)}">${SNAP.overall.toFixed(0)}</div><div class="vs">${l.zone[SNAP.label]}</div></div>
+     <div class="cell"><div class="k">${l.riskL}</div><div class="v" style="color:${riskCol}">${l.riskW[riskKey]}</div><div class="vs">${l.riskSub(up,belowW)}</div></div>
      <div class="cell"><div class="k">${l.actL}</div><div class="v act">${actText}</div></div>`;
 
-  const zhtml=`<b style="color:${scoreVar(SNAP.overall)}">${l.zone[SNAP.label]}</b>`;
+  const zhtml=`<b style="color:${scoreVar(SNAP.overall)}">${zInText(SNAP.label)}</b>`;
   document.getElementById("ins-what").innerHTML=l.what(zhtml,SNAP.overall.toFixed(0),up,belowW);
   document.getElementById("ins-dca").textContent=l.dca(SNAP.overall);
-  const w200=COMP.ma200w[SNAP.idx];document.getElementById("ins-inval").textContent=l.inval(w200?Math.round(w200).toLocaleString("en-US"):"—");
+  const w200=COMP.ma200w[SNAP.idx];document.getElementById("ins-inval").textContent=l.inval(w200?Math.round(w200).toLocaleString("en-US"):"–");
 
   const rows=document.getElementById("rows");rows.innerHTML="";
   Indicators.INDICES.forEach(s=>{
     const v=SNAP.values[s.key],score=SNAP.scores[s.key],k=band(score);
     const el=document.createElement("div");el.className="row";
-    el.innerHTML=`<div class="id"><span class="nm">${s.title}</span><span class="tier ${s.tier}">${s.tier}</span><span class="st" style="color:var(--z-${k})">${l.status[s.key](v)}</span><button class="i" aria-label="info">ⓘ</button></div>
+    el.innerHTML=`<div class="id"><span class="nm">${s.title}</span><span class="tier ${s.tier}" title="${l.weight(s.weight)}">×${s.weight}</span><span class="st" style="color:var(--z-${k})">${l.status[s.key](v)}</span><button class="i" aria-label="${l.info(s.title)}" aria-expanded="false">ⓘ</button></div>
       <div class="val">${s.fmt(v)}</div>
       <div class="sparkwrap">${spark(s.key,s.bands)}<span class="sc"><b style="color:var(--z-${k})">${score.toFixed(0)}</b>/100</span></div>
       <div class="rbar"><i style="background:var(--z-${k})"></i></div>
       <div class="info">${l.metric[s.key]||""}<span class="rd">${(l.read&&l.read[s.key])||""}</span></div>`;
-    el.querySelector(".i").onclick=()=>el.classList.toggle("open");
+    el.querySelector(".i").onclick=function(){this.setAttribute("aria-expanded",el.classList.toggle("open"));};
     rows.appendChild(el);requestAnimationFrame(()=>{el.querySelector(".rbar i").style.width=score+"%";});
   });
 
@@ -241,14 +263,14 @@ function render(t){
 /* ---- DCA simulator ---- */
 let curDcaStart="2020-01-01";
 function buildDcaRange(){const h=document.getElementById("dcaRange");h.innerHTML="";
-  [["2016","2016-01-01"],["2018","2018-01-01"],["2020","2020-01-01"],["2022","2022-01-01"],["All",null]].forEach(([la,st])=>{
+  [["2016","2016-01-01"],["2018","2018-01-01"],["2020","2020-01-01"],["2022","2022-01-01"],[L().all,null]].forEach(([la,st])=>{
     const b=document.createElement("button");b.textContent=la;if(st===curDcaStart)b.className="on";
     b.onclick=()=>{curDcaStart=st;buildDcaRange();renderDca();};h.appendChild(b);});}
 function renderDca(){
   const l=L(),r=Indicators.dcaSim(COMP,SCORES,curDcaStart);
   if(!r){document.getElementById("dcaHead").textContent="";document.getElementById("dcaGrid").innerHTML="";return;}
-  const startLbl=curDcaStart?curDcaStart.slice(0,4):(LANG==="th"?"แรกสุด":"start");
-  document.getElementById("dcaHead").innerHTML=l.dcaHead((r.edge*100).toFixed(1),startLbl);
+  const startLbl=curDcaStart?curDcaStart.slice(0,4):l.allStart;
+  document.getElementById("dcaHead").innerHTML=l.dcaHead(r.edge*100,startLbl);
   const money=v=>"$"+Math.round(v).toLocaleString("en-US");
   document.getElementById("dcaGrid").innerHTML=
     `<div class="h"></div><div class="h num">${l.dcaCols[1]}</div><div class="h num">${l.dcaCols[2]}</div><div class="h num">${l.dcaCols[3]}</div>
@@ -260,7 +282,7 @@ function renderDca(){
 function renderCycle(){
   const l=L(),box=document.getElementById("cycRows");box.innerHTML="";
   const ms=Indicators.cycleMatch(COMP,SCORES);
-  const fp=v=>!Number.isFinite(v)?"—":`<span style="color:${v>=0?"var(--z-good)":"var(--z-bad)"}">${(v>=0?"+":"−")+Math.abs(v*100).toFixed(0)}%</span>`;
+  const fp=v=>!Number.isFinite(v)?"–":`<span style="color:${v>=0?"var(--z-good)":"var(--z-bad)"}">${(v>=0?"+":"−")+Math.abs(v*100).toFixed(0)}%</span>`;
   ms.forEach(m=>{const el=document.createElement("div");el.className="cyc-row";
     el.innerHTML=l.cycRow(esc(m.date),Math.round(m.sim*100),fp(m.f90),fp(m.f365));box.appendChild(el);});
 }
@@ -292,25 +314,26 @@ function countUp(node,to){const t0=performance.now();
   (function step(t){const p=Math.min(1,(t-t0)/1000),e=1-Math.pow(1-p,3);node.firstChild.textContent=Math.round(to*e);if(p<1)requestAnimationFrame(step);})(t0);}
 
 const pct=x=>(x>=0?"+":"−")+Math.abs(x*100).toFixed(0)+"%";
-const ZDISP=z=>z.replace("STRONG BUY","STRONG ACCUMULATE");
-const ZT=z=>ZDISP(z).toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase()); // "Strong Accumulate": labels, not shouting
+const zInText=k=>LANG==="en"?L().zone[k].toLowerCase():L().zone[k];
 function buildBtH(){const h=document.getElementById("bth");h.innerHTML="";
-  [["1M",30],["3M",90],["6M",180],["1Y",365]].forEach(([la,n])=>{const b=document.createElement("button");b.textContent=la;if(n===curH)b.className="on";b.onclick=()=>{curH=n;buildBtH();renderBacktest();};h.appendChild(b);});}
+  [[L().hz[0],30],[L().hz[1],90],[L().hz[2],180],[L().hz[3],365]].forEach(([la,n])=>{const b=document.createElement("button");b.textContent=la;if(n===curH)b.className="on";b.onclick=()=>{curH=n;buildBtH();renderBacktest();};h.appendChild(b);});}
 function renderBacktest(){
-  const l=L(),bt=Indicators.backtest(COMP,SCORES,curH),cur=bt.find(b=>b.zone===SNAP.label);
-  document.getElementById("bthead").innerHTML=(cur&&cur.n)?l.btHead(`<b style="color:${scoreVar(SNAP.overall)}">${ZT(SNAP.label)}</b>`,pct(cur.median),curH,cur.n,Math.round(cur.win*100)):"";
+  const l=L(),bt=Indicators.backtest(COMP,SCORES,curH),cur=bt.find(b=>b.zone===SNAP.label),hL=l.hz[[30,90,180,365].indexOf(curH)];
+  // overlapping daily windows aren't independent: under 3 non-overlapping periods is too little to trust
+  const thin=b=>b.n/curH<3;
+  document.getElementById("bthead").innerHTML=(cur&&cur.n)?l.btHead(`<b style="color:${scoreVar(SNAP.overall)}">${zInText(SNAP.label)}</b>`,pct(cur.median),hL,cur.n,Math.round(cur.win*100))+(thin(cur)?` <span>${l.btThinNow}</span>`:""):"";
   const box=document.getElementById("bt");box.innerHTML="";
-  bt.forEach(b=>{const k=band(b.zone==="STRONG BUY"?80:b.zone==="ACCUMULATE"?60:b.zone==="NEUTRAL"?45:b.zone==="CAUTION"?30:10);
-    const el=document.createElement("div");el.className="bt-row"+(b.zone===SNAP.label?" on":"");
-    el.innerHTML=`<span class="z" style="color:var(--z-${k})">${ZT(b.zone)}</span><span class="m" style="color:${b.n?(b.median>=0?"var(--z-good)":"var(--z-bad)"):"var(--faint)"}">${b.n?pct(b.median):"—"}</span><span class="w">${b.n?l.btWin(Math.round(b.win*100),b.n):l.btN0}</span>`;
+  bt.forEach(b=>{const k=band(b.zone==="STRONG BUY"?80:b.zone==="ACCUMULATE"?60:b.zone==="NEUTRAL"?45:b.zone==="CAUTION"?30:10),weak=!b.n||thin(b);
+    const el=document.createElement("div");el.className="bt-row"+(b.zone===SNAP.label?" on":"")+(weak?" thin":"");
+    el.innerHTML=`<span class="z" style="color:var(--z-${k})">${l.zone[b.zone]}</span><span class="m" style="color:${weak?"var(--muted)":b.median>=0?"var(--z-good)":"var(--z-bad)"}">${b.n?pct(b.median):"–"}</span><span class="w">${!b.n?l.btN0:thin(b)?l.btThin(b.n):l.btWin(Math.round(b.win*100),b.n)}</span>`;
     box.appendChild(el);});
 }
 function buildTabs(){
   const tabs=document.getElementById("tabs");tabs.innerHTML="";
-  [["price","Price"],["score","Score"],...Indicators.INDICES.map(s=>[s.key,s.title.replace(" Multiple","").replace(" Top","").replace("-Score","")])]
+  [["price",L().tabPrice],["score",L().tabScore],...Indicators.INDICES.map(s=>[s.key,s.title.replace(" Multiple","").replace(" Top","").replace("-Score","")])]
     .forEach(([k,la])=>{const b=document.createElement("button");b.textContent=la;if(k===curKey)b.className="on";b.onclick=()=>{curKey=k;buildTabs();drawChart();};tabs.appendChild(b);});
   const rg=document.getElementById("ranges");rg.innerHTML="";
-  [["1Y",365],["4Y",1460],["All",99999]].forEach(([la,n])=>{const b=document.createElement("button");b.textContent=la;if(n===curRange)b.className="on";b.onclick=()=>{curRange=n;buildTabs();drawChart();};rg.appendChild(b);});
+  [[L().ranges[0],365],[L().ranges[1],1460],[L().all,99999]].forEach(([la,n])=>{const b=document.createElement("button");b.textContent=la;if(n===curRange)b.className="on";b.onclick=()=>{curRange=n;buildTabs();drawChart();};rg.appendChild(b);});
 }
 /* vertical dashed line + year label at each halving (price/score tabs) */
 const halvingPlugin={id:"hv",afterDatasetsDraw(ch){
@@ -332,12 +355,12 @@ function drawChart(){
   const N=COMP.date.length,start=Math.max(0,N-curRange),labels=COMP.date.slice(start),ink=inkHex();
   const grid={color:DARK()?"rgba(255,255,255,.07)":"rgba(20,20,16,.07)"},ticks={color:DARK()?"#85827b":"#6e6e69",font:{size:12,family:"Anuphan"},maxTicksLimit:5};
   const mk=(la,arr,color,w=1.8,dash=null)=>({label:la,data:arr.slice(start),borderColor:color,borderWidth:w,borderDash:dash||[],pointRadius:0,tension:.2,spanGaps:true,fill:false});
-  let datasets=[],logY=false;
-  if(curKey==="price"){logY=true;datasets=[mk("BTC",COMP.price,ink,2),mk("200W MA",COMP.ma200w,btcHex(),1.6),mk("200D MA",COMP.ma200,DARK()?"#6c6960":"#a9a9a2",1,[4,4])];
-    const sb=COMP.price.map((p,i)=>SCORES[i]>=75?p:null);datasets.push({label:"Strong zone",data:sb.slice(start),borderColor:hx("good"),backgroundColor:hx("good"),showLine:false,pointRadius:1.6,pointHoverRadius:3,spanGaps:false});
-    if(FRESH&&Number.isFinite(FRESH.realizedPrice))datasets.push({label:"Realized",data:labels.map(()=>FRESH.realizedPrice),borderColor:DARK()?"#9b988f":"#9a6a00",borderWidth:1,borderDash:[2,3],pointRadius:0,fill:false});}
-  else if(curKey==="score"){datasets=[mk("Buy score",SCORES,ink,2)];[[75,hx("good")],[55,hx("ok")],[40,hx("neutral")],[25,hx("warn")]].forEach(([y,c])=>datasets.push({label:String(y),data:labels.map(()=>y),borderColor:c,borderWidth:1,borderDash:[5,4],pointRadius:0,fill:false}));}
-  else if(curKey==="pi_ratio"){logY=true;datasets=[mk("111D",COMP.ma111,ink,1.8),mk("2×350D",COMP.ma350x2,hx("bad"),1.6)];}
+  let datasets=[],logY=false;const lg=L().lg;
+  if(curKey==="price"){logY=true;datasets=[mk(lg.btc,COMP.price,ink,2),mk(lg.w200,COMP.ma200w,btcHex(),1.6),mk(lg.d200,COMP.ma200,DARK()?"#6c6960":"#a9a9a2",1,[4,4])];
+    const sb=COMP.price.map((p,i)=>SCORES[i]>=75?p:null);datasets.push({label:lg.cheap,data:sb.slice(start),borderColor:hx("good"),backgroundColor:hx("good"),showLine:false,pointRadius:1.6,pointHoverRadius:3,spanGaps:false});
+    if(FRESH&&Number.isFinite(FRESH.realizedPrice))datasets.push({label:lg.rp,data:labels.map(()=>FRESH.realizedPrice),borderColor:DARK()?"#9b988f":"#9a6a00",borderWidth:1,borderDash:[2,3],pointRadius:0,fill:false});}
+  else if(curKey==="score"){datasets=[mk(lg.score,SCORES,ink,2)];[[75,hx("good")],[55,hx("ok")],[40,hx("neutral")],[25,hx("warn")]].forEach(([y,c])=>datasets.push({label:String(y),data:labels.map(()=>y),borderColor:c,borderWidth:1,borderDash:[5,4],pointRadius:0,fill:false}));}
+  else if(curKey==="pi_ratio"){logY=true;datasets=[mk(lg.ma111,COMP.ma111,ink,1.8),mk(lg.ma350,COMP.ma350x2,hx("bad"),1.6)];}
   else{const s=Indicators.INDICES.find(x=>x.key===curKey);datasets=[mk(s.title,COMP[curKey],ink,2)];s.bands.forEach(b=>datasets.push({label:b.label,data:labels.map(()=>b.y),borderColor:b.color,borderWidth:1,borderDash:[5,4],pointRadius:0,fill:false}));}
   if(chart)chart.destroy();
   chart=new Chart(document.getElementById("chart"),{type:"line",data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,animation:false /* per-point animations made each draw ~15x slower (TBT/INP) */,interaction:{mode:"index",intersect:false},
@@ -348,7 +371,7 @@ function drawChart(){
 
 /* ---------- init ---------- */
 const savedTheme=localStorage.getItem("theme");applyTheme(savedTheme||"auto");
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{if(!localStorage.getItem("theme")){document.getElementById("themeBtn").innerHTML=DARK()?SUN:MOON;if(COMP&&SNAP)render(lastT);}});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{if(!localStorage.getItem("theme")){themeBtnSync();if(COMP&&SNAP)render(lastT);}});
 applyStaticLang();
 document.getElementById("themeBtn").onclick=toggleTheme;
 document.getElementById("langBtn").onclick=()=>setLang(LANG==="th"?"en":"th");
