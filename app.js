@@ -40,8 +40,7 @@ const T={
   dcaNote:"จำลองซื้อทุก 7 วัน ครั้งละ $100 · แบบปรับตามคะแนนซื้อ 0.25–2.5 เท่าของ $100 ตามระดับ (เกณฑ์เดียวกับแนวทาง) · เทียบที่ต้นทุนเฉลี่ยต่อ BTC เพราะเงินลงทุนรวมไม่เท่ากัน · ผลในอดีตไม่รับประกันอนาคต",
   all:"ทั้งหมด", allStart:"แรกสุด", ranges:["1 ปี","4 ปี"], tabPrice:"ราคา", tabScore:"คะแนน",
   lg:{btc:"BTC",w200:"เฉลี่ย 200 สัปดาห์",d200:"เฉลี่ย 200 วัน",cheap:"วันที่ถูกมาก",rp:"ต้นทุนเฉลี่ยตลาด",score:"คะแนน",ma111:"เฉลี่ย 111 วัน",ma350:"2× เฉลี่ย 350 วัน"},
-  secCyc:"ตอนนี้คล้ายช่วงไหนในอดีต",
-  cycRow:(d,s,f90,f365)=>`<b>${d}</b> <span style="color:var(--muted)">คล้าย ${s}%</span> · อีก 90 วันราคา <b>${f90}</b> · 1 ปี <b>${f365}</b>`,
+  secCyc:"ตอนนี้คล้ายช่วงไหนในอดีต", cycCols:["ช่วงที่คล้าย","คล้าย","อีก 90 วัน","อีก 1 ปี"],
   cycNote:"เทียบรูปร่างและระดับของคะแนน 90 วันล่าสุดกับทุกช่วงในอดีต (ไม่นับปีล่าสุด) · คล้ายกันไม่ได้แปลว่าราคาจะเดินซ้ำ",
   secHm:"คะแนนรายเดือน · แต่ละช่องคือระดับเฉลี่ยของเดือนนั้น",
   hmNote:"เขียว = ถูก · แดง = แพง · ⛏ = เดือนที่เกิด halving (รางวัลการขุดลดลงครึ่งหนึ่ง)",
@@ -84,8 +83,7 @@ const T={
   dcaNote:"Simulated buys every 7 days at $100 · the scaled version buys 0.25–2.5× that amount by level (same rule as What to do) · compared on average cost per BTC, because the totals invested differ · past results don't guarantee the future",
   all:"All", allStart:"the start", ranges:["1 year","4 years"], tabPrice:"Price", tabScore:"Score",
   lg:{btc:"BTC",w200:"200-week avg",d200:"200-day avg",cheap:"Very cheap days",rp:"Market cost basis",score:"Score",ma111:"111-day avg",ma350:"2× 350-day avg"},
-  secCyc:"Past periods most like now",
-  cycRow:(d,s,f90,f365)=>`<b>${d}</b> <span style="color:var(--muted)">${s}% similar</span> · price 90 days later <b>${f90}</b> · 1 year later <b>${f365}</b>`,
+  secCyc:"Past periods most like now", cycCols:["Similar period","Match","90 days later","1 year later"],
   cycNote:"Compares the shape and level of the last 90 days of the score with every past period (excluding the latest year) · similar doesn't mean price will repeat",
   secHm:"Monthly score · each cell is that month's average level",
   hmNote:"Green = cheap · red = expensive · ⛏ = halving month (the mining reward is cut in half)",
@@ -222,8 +220,8 @@ function render(t){
   Indicators.INDICES.forEach(s=>{
     const v=SNAP.values[s.key],score=SNAP.scores[s.key],k=band(score);
     const el=document.createElement("div");el.className="row";
-    el.innerHTML=`<div class="id"><span class="nm">${s.title}</span><span class="tier ${s.tier}" title="${l.weight(s.weight)}">×${s.weight}</span><span class="st" style="color:var(--z-${k})">${l.status[s.key](v)}</span><button class="i" aria-label="${l.info(s.title)}" aria-expanded="false">ⓘ</button></div>
-      <div class="val">${s.fmt(v)}</div>
+    el.innerHTML=`<div class="nm">${s.title}</div><div class="val">${s.fmt(v)}</div>
+      <div class="meta"><span class="tier ${s.tier}" title="${l.weight(s.weight)}">×${s.weight}</span><span class="st" style="color:var(--z-${k})">${l.status[s.key](v)}</span><button class="i" aria-label="${l.info(s.title)}" aria-expanded="false">ⓘ</button></div>
       <div class="sparkwrap">${spark(s.key,s.bands)}<span class="sc"><b style="color:var(--z-${k})">${score.toFixed(0)}</b>/100</span></div>
       <div class="info">${l.metric[s.key]||""}<span class="rd">${(l.read&&l.read[s.key])||""}</span></div>`;
     el.querySelector(".i").onclick=function(){this.setAttribute("aria-expanded",el.classList.toggle("open"));};
@@ -255,11 +253,10 @@ function renderDca(){
 
 /* ---- cycle compare ---- */
 function renderCycle(){
-  const l=L(),box=document.getElementById("cycRows");box.innerHTML="";
-  const ms=Indicators.cycleMatch(COMP,SCORES);
+  const l=L(),ms=Indicators.cycleMatch(COMP,SCORES);
   const fp=v=>!Number.isFinite(v)?"–":`<span style="color:${v>=0?"var(--z-good)":"var(--z-bad)"}">${(v>=0?"+":"−")+Math.abs(v*100).toFixed(0)}%</span>`;
-  ms.forEach(m=>{const el=document.createElement("div");el.className="cyc-row";
-    el.innerHTML=l.cycRow(esc(m.date),Math.round(m.sim*100),fp(m.f90),fp(m.f365));box.appendChild(el);});
+  document.getElementById("cycRows").innerHTML=l.cycCols.map((h,i)=>`<div class="h${i?" num":""}">${h}</div>`).join("")+
+    ms.map(m=>`<div class="r">${esc(m.date)}</div><div class="num">${Math.round(m.sim*100)}%</div><div class="num">${fp(m.f90)}</div><div class="num">${fp(m.f365)}</div>`).join("");
 }
 
 /* ---- heatmap (monthly average score) ---- */
