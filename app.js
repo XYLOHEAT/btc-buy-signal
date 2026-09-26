@@ -39,7 +39,7 @@ const T={
   dcaCols:["","ลงทุนรวม","ได้ BTC","ต้นทุนเฉลี่ย"],dcaFlat:"ซื้อเท่ากันทุกครั้ง",dcaSig:"ปรับตามคะแนน",
   dcaNote:"จำลองซื้อทุก 7 วัน ครั้งละ $100 · แบบปรับตามคะแนนซื้อ 0.25–2.5 เท่าของ $100 ตามระดับ (เกณฑ์เดียวกับแนวทาง) · เทียบที่ต้นทุนเฉลี่ยต่อ BTC เพราะเงินลงทุนรวมไม่เท่ากัน · ผลในอดีตไม่รับประกันอนาคต",
   all:"ทั้งหมด", allStart:"แรกสุด", ranges:["1 ปี","4 ปี"], tabPrice:"ราคา", tabScore:"คะแนน",
-  lg:{btc:"BTC",w200:"เฉลี่ย 200 สัปดาห์",d200:"เฉลี่ย 200 วัน",cheap:"วันที่ถูกมาก",rp:"ต้นทุนเฉลี่ยตลาด",score:"คะแนน",ma111:"เฉลี่ย 111 วัน",ma350:"2× เฉลี่ย 350 วัน"},
+  lg:{btc:"BTC (สีเขียว = วันที่ถูกมาก)",w200:"เฉลี่ย 200 สัปดาห์",d200:"เฉลี่ย 200 วัน",rp:"ต้นทุนเฉลี่ยตลาด",score:"คะแนน",ma111:"เฉลี่ย 111 วัน",ma350:"2× เฉลี่ย 350 วัน"},
   secCyc:"ตอนนี้คล้ายช่วงไหนในอดีต", cycCols:["ช่วงที่คล้าย","คล้าย","อีก 90 วัน","อีก 1 ปี"],
   cycNote:"เทียบรูปร่างและระดับของคะแนน 90 วันล่าสุดกับทุกช่วงในอดีต (ไม่นับปีล่าสุด) · คล้ายกันไม่ได้แปลว่าราคาจะเดินซ้ำ",
   secHm:"คะแนนรายเดือน · แต่ละช่องคือระดับเฉลี่ยของเดือนนั้น",
@@ -82,7 +82,7 @@ const T={
   dcaCols:["","Invested","BTC bought","Avg cost"],dcaFlat:"Same amount",dcaSig:"Scaled by score",
   dcaNote:"Simulated buys every 7 days at $100 · the scaled version buys 0.25–2.5× that amount by level (same rule as What to do) · compared on average cost per BTC, because the totals invested differ · past results don't guarantee the future",
   all:"All", allStart:"the start", ranges:["1 year","4 years"], tabPrice:"Price", tabScore:"Score",
-  lg:{btc:"BTC",w200:"200-week avg",d200:"200-day avg",cheap:"Very cheap days",rp:"Market cost basis",score:"Score",ma111:"111-day avg",ma350:"2× 350-day avg"},
+  lg:{btc:"BTC (green = very cheap days)",w200:"200-week avg",d200:"200-day avg",rp:"Market cost basis",score:"Score",ma111:"111-day avg",ma350:"2× 350-day avg"},
   secCyc:"Past periods most like now", cycCols:["Similar period","Match","90 days later","1 year later"],
   cycNote:"Compares the shape and level of the last 90 days of the score with every past period (excluding the latest year) · similar doesn't mean price will repeat",
   secHm:"Monthly score · each cell is that month's average level",
@@ -103,7 +103,7 @@ function themeBtnSync(){const b=document.getElementById("themeBtn");b.innerHTML=
 function toggleTheme(){const next=DARK()?"light":"dark";localStorage.setItem("theme",next);applyTheme(next);if(COMP&&SNAP)render(lastT);}
 
 /* ---------- colors ---------- */
-const ZHEX={good:["#1c7a47","#34d399"],ok:["#5a7711","#a3e635"],neutral:["#926500","#fbbf24"],warn:["#ae5318","#fb923c"],bad:["#bb2f24","#f87171"]};
+const ZHEX={good:["#1c7a47","#75c59b"],ok:["#5a7711","#abca84"],neutral:["#926500","#dbb970"],warn:["#ae5318","#dc9a6c"],bad:["#bb2f24","#de857e"]}; // [light, dark]: mirror the CSS --z-* tokens
 const band=s=>s>=75?"good":s>=55?"ok":s>=40?"neutral":s>=25?"warn":"bad";
 const hx=k=>ZHEX[k][DARK()?1:0];
 const scoreVar=s=>`var(--z-${band(s)})`;
@@ -141,11 +141,6 @@ async function recompute(tp){
   SCORES=Indicators.scoreSeries(COMP);SNAP=Indicators.snapshot(COMP);render(t);
 }
 
-function coin(zone){
-  const m={"STRONG BUY":{e:"open",mouth:"M34 60 Q50 76 66 60"},"ACCUMULATE":{e:"open",mouth:"M37 60 Q50 71 63 60"},"NEUTRAL":{e:"open",mouth:"M39 64 H61"},"CAUTION":{e:"flat",mouth:"M38 66 Q50 60 62 66"},"EXPENSIVE":{e:"flat",mouth:"M38 68 Q50 58 62 68"}}[zone]||{e:"open",mouth:"M39 64 H61"};
-  const eyes=m.e==="flat"?'<rect x="34" y="45" width="11" height="3.5" rx="1.5"/><rect x="55" y="45" width="11" height="3.5" rx="1.5"/>':'<circle cx="39" cy="46" r="3.6"/><circle cx="61" cy="46" r="3.6"/>';
-  document.getElementById("coin").innerHTML=`<circle cx="50" cy="50" r="45" fill="#f7931a"/><circle cx="50" cy="50" r="45" fill="none" stroke="#171715" stroke-width="3"/><g fill="#171715">${eyes}</g><path d="${m.mouth}" stroke="#171715" stroke-width="3.6" fill="none" stroke-linecap="round"/>`;
-}
 function spark(key,bands){
   const W=150,H=28,ys=[],xs=[],S=COMP[key],N=S.length,start=Math.max(0,N-365);
   for(let i=start;i<N;i++){if(Number.isFinite(S[i])){ys.push(S[i]);xs.push(i);}}
@@ -188,13 +183,12 @@ function render(t){
   const l=L(),C=2*Math.PI*88,col=scoreVar(SNAP.overall);
   const arc=document.getElementById("arc");arc.style.stroke=col;arc.setAttribute("stroke-dasharray",C);arc.setAttribute("stroke-dashoffset",C);
   requestAnimationFrame(()=>arc.setAttribute("stroke-dashoffset",C*(1-SNAP.overall/100)));
-  const sc=document.getElementById("score");sc.style.color=col;countUp(sc,SNAP.overall);
+  document.getElementById("score").firstChild.textContent=Math.round(SNAP.overall); // number in ink: color marks the state (ring, zone), not the figure
   const z=document.getElementById("zone");z.textContent=l.zone[SNAP.label];z.style.color=col;
   // percentile: share of all scored days with a lower score, i.e. days that were more expensive than today
   const past=SCORES.filter(Number.isFinite),pctl=Math.round(100*past.filter(v=>v<SNAP.overall).length/past.length);
   document.getElementById("zoneth").textContent=l.pctl(pctl,COMP.date[SCORES.findIndex(Number.isFinite)].slice(0,4));
   document.querySelector('.gauge svg[role="img"]').setAttribute("aria-label",l.scoreAria(Math.round(SNAP.overall)));
-  coin(SNAP.label);
 
   document.getElementById("price").textContent="$"+Math.round(SNAP.price).toLocaleString("en-US");
   const chg=document.getElementById("chg");
@@ -281,9 +275,6 @@ function renderHeatmap(){
   }
   hm.innerHTML=html;
 }
-function countUp(node,to){const t0=performance.now();
-  if(matchMedia("(prefers-reduced-motion: reduce)").matches){node.firstChild.textContent=Math.round(to);return;}
-  (function step(t){const p=Math.min(1,(t-t0)/1000),e=1-Math.pow(1-p,3);node.firstChild.textContent=Math.round(to*e);if(p<1)requestAnimationFrame(step);})(t0);}
 
 const pct=x=>(x>=0?"+":"−")+Math.abs(x*100).toFixed(0)+"%";
 const zInText=k=>LANG==="en"?L().zone[k].toLowerCase():L().zone[k];
@@ -329,7 +320,8 @@ function drawChart(){
   const mk=(la,arr,color,w=1.8,dash=null)=>({label:la,data:arr.slice(start),borderColor:color,borderWidth:w,borderDash:dash||[],pointRadius:0,tension:.2,spanGaps:true,fill:false});
   let datasets=[],logY=false;const lg=L().lg;
   if(curKey==="price"){logY=true;datasets=[mk(lg.btc,COMP.price,ink,2),mk(lg.w200,COMP.ma200w,btcHex(),1.6),mk(lg.d200,COMP.ma200,DARK()?"#6c6960":"#a9a9a2",1,[4,4])];
-    const sb=COMP.price.map((p,i)=>SCORES[i]>=75?p:null);datasets.push({label:lg.cheap,data:sb.slice(start),borderColor:hx("good"),backgroundColor:hx("good"),showLine:false,pointRadius:1.6,pointHoverRadius:3,spanGaps:false});
+    // very cheap days: the price line itself turns the "good" color instead of a separate dot series
+    datasets[0].segment={borderColor:c=>SCORES[start+c.p1DataIndex]>=75?hx("good"):undefined};
     if(FRESH&&Number.isFinite(FRESH.realizedPrice))datasets.push({label:lg.rp,data:labels.map(()=>FRESH.realizedPrice),borderColor:DARK()?"#9b988f":"#9a6a00",borderWidth:1,borderDash:[2,3],pointRadius:0,fill:false});}
   else if(curKey==="score"){datasets=[mk(lg.score,SCORES,ink,2)];[[75,hx("good")],[55,hx("ok")],[40,hx("neutral")],[25,hx("warn")]].forEach(([y,c])=>datasets.push({label:String(y),data:labels.map(()=>y),borderColor:c,borderWidth:1,borderDash:[5,4],pointRadius:0,fill:false}));}
   else if(curKey==="pi_ratio"){logY=true;datasets=[mk(lg.ma111,COMP.ma111,ink,1.8),mk(lg.ma350,COMP.ma350x2,hx("bad"),1.6)];}

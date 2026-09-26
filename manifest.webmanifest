@@ -1,7 +1,7 @@
 {
   "name": "Bitcoin Accumulation Signal",
   "short_name": "BTC Accum",
-  "description": "On-chain accumulation-zone signal for Bitcoin (tier S/A index combo)",
+  "description": "Six long-term Bitcoin valuation indices, one accumulation score",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
@@ -11,6 +11,6 @@
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
-    { "src": "coin.svg", "sizes": "any", "type": "image/svg+xml" }
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }
   ]
 }

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- the product's one image: the score ring, three-quarters full. No mascot (ADR-016) -->
+  <rect width="512" height="512" rx="112" fill="#171715"/>
+  <circle cx="256" cy="256" r="150" fill="none" stroke="#3a3b3f" stroke-width="44"/>
+  <circle cx="256" cy="256" r="150" fill="none" stroke="#f7931a" stroke-width="44" stroke-dasharray="706.9 942.5" transform="rotate(-90 256 256)"/>
+</svg>
