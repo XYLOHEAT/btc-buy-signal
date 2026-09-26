@@ -219,7 +219,7 @@ function applyStaticLang(){const l=L();
   document.getElementById("retry").textContent=l.retry;
   ["tabs","ranges","bth","dcaRange"].forEach((id,i)=>document.getElementById(id).setAttribute("aria-label",l.grp[i]));
   buildOpts();
-  if(!SNAP){renderRows();document.querySelector('.gauge svg[role="img"]').setAttribute("aria-label",l.loading);}
+  if(!SNAP){renderRows();skLoad();document.querySelector('.gauge svg[role="img"]').setAttribute("aria-label",l.loading);}
   if(lastErr)showErr(lastT);
   const lb=document.getElementById("langBtn");lb.textContent=LANG==="th"?"EN":"ไทย";lb.title=l.lang;
   document.getElementById("refresh").setAttribute("aria-label",l.refresh);themeBtnSync();
@@ -231,7 +231,7 @@ function setLang(x){LANG=x;localStorage.setItem("lang",x);applyStaticLang();if(C
 function render(t){
   const l=L(),C=2*Math.PI*88,col=scoreVar(SNAP.overall);
   const arc=document.getElementById("arc");arc.style.stroke=col;arc.setAttribute("stroke-dasharray",C);arc.setAttribute("stroke-dashoffset",C);
-  requestAnimationFrame(()=>arc.setAttribute("stroke-dashoffset",C*(1-SNAP.overall/100)));
+  const fill=C*(1-SNAP.overall/100);requestAnimationFrame(()=>arc.setAttribute("stroke-dashoffset",fill));
   document.getElementById("score").firstChild.textContent=Math.round(SNAP.overall); // number in ink: color marks the state (ring, zone), not the figure
   const z=document.getElementById("zone");z.textContent=l.zone[SNAP.label];z.style.color=col;
   // percentile: share of all scored days with a lower score, i.e. days that were more expensive than today
@@ -256,8 +256,14 @@ function render(t){
   const w200=COMP.ma200w[SNAP.idx];document.getElementById("ins-inval").textContent=l.inval(w200?Math.round(w200).toLocaleString("en-US"):"–");
 
   renderRows();drawChart();renderBacktest();renderDca();renderCycle();renderHeatmap();
-  document.getElementById("app").classList.remove("is-loading","failed");
+  document.getElementById("app").classList.remove("is-loading","failed");skSave();
 }
+/* skeleton sizes: text wraps differently on every width, so each slot's real height is remembered per
+   language and window width (in rem) and reused as its placeholder size on the next load */
+const skKey=()=>"sk:"+LANG+":"+innerWidth,remPx=()=>parseFloat(getComputedStyle(document.documentElement).fontSize);
+function skSave(){try{localStorage.setItem(skKey(),JSON.stringify(Object.fromEntries([...document.querySelectorAll(".sk")].map(e=>[e.id,+(e.getBoundingClientRect().height/remPx()).toFixed(3)]))));}catch(e){}}
+function skLoad(){document.querySelectorAll(".sk").forEach(e=>e.style.removeProperty("--h"));
+  try{const h=JSON.parse(localStorage.getItem(skKey()))||{};for(const id in h){const e=document.getElementById(id);if(e)e.style.setProperty("--h",h[id]+"rem");}}catch(e){}}
 /* index rows. Before the data lands (no SNAP) the same rows show "–": names, weights and the ⓘ notes
    are static, so the list is its own skeleton and never jumps */
 function renderRows(){
@@ -293,6 +299,10 @@ function buildOpts(){const l=L();
   opts("dcaRange",[["2016","2016-01-01"],["2018","2018-01-01"],["2020","2020-01-01"],["2022","2022-01-01"],[l.all,null]],curDcaStart,st=>{curDcaStart=st;if(COMP)renderDca();});
 }
 
+/* .tbl: header row, then rows of [label, ...values]. Each value cell carries its column name for the stacked layout */
+const tbl=(cols,rows)=>cols.map((h,i)=>`<div class="h${i?" num":""}">${h}</div>`).join("")+
+  rows.map(([r,...v])=>`<div class="r">${r}</div>`+v.map((x,i)=>`<div class="num" data-l="${cols[i+1]}">${x}</div>`).join("")).join("");
+
 /* ---- DCA simulator ---- */
 let curDcaStart="2020-01-01";
 function renderDca(){
@@ -301,18 +311,14 @@ function renderDca(){
   const startLbl=curDcaStart?curDcaStart.slice(0,4):l.allStart;
   document.getElementById("dcaHead").innerHTML=l.dcaHead(r.edge*100,startLbl);
   const money=v=>"$"+Math.round(v).toLocaleString("en-US");
-  document.getElementById("dcaGrid").innerHTML=
-    `<div class="h"></div><div class="h num">${l.dcaCols[1]}</div><div class="h num">${l.dcaCols[2]}</div><div class="h num">${l.dcaCols[3]}</div>
-     <div class="r">${l.dcaSig}</div><div class="num">${money(r.invS)}</div><div class="num">${r.btcS.toFixed(4)}</div><div class="num win">${money(r.costS)}</div>
-     <div class="r">${l.dcaFlat}</div><div class="num">${money(r.invF)}</div><div class="num">${r.btcF.toFixed(4)}</div><div class="num">${money(r.costF)}</div>`;
+  document.getElementById("dcaGrid").innerHTML=tbl(l.dcaCols,[[l.dcaSig,money(r.invS),r.btcS.toFixed(4),`<span class="win">${money(r.costS)}</span>`],[l.dcaFlat,money(r.invF),r.btcF.toFixed(4),money(r.costF)]]);
 }
 
 /* ---- cycle compare ---- */
 function renderCycle(){
   const l=L(),ms=Indicators.cycleMatch(COMP,SCORES);
   const fp=v=>!Number.isFinite(v)?"–":`<span style="color:${v>=0?"var(--z-good)":"var(--z-bad)"}">${(v>=0?"+":"−")+Math.abs(v*100).toFixed(0)}%</span>`;
-  document.getElementById("cycRows").innerHTML=l.cycCols.map((h,i)=>`<div class="h${i?" num":""}">${h}</div>`).join("")+
-    (ms.length?ms.map(m=>`<div class="r">${esc(m.date)}</div><div class="num">${Math.round(m.sim*100)}%</div><div class="num">${fp(m.f90)}</div><div class="num">${fp(m.f365)}</div>`).join(""):`<div class="empty">${l.noData}</div>`);
+  document.getElementById("cycRows").innerHTML=ms.length?tbl(l.cycCols,ms.map(m=>[esc(m.date),Math.round(m.sim*100)+"%",fp(m.f90),fp(m.f365)])):tbl(l.cycCols,[])+`<div class="empty">${l.noData}</div>`;
 }
 
 /* ---- heatmap (monthly average score) ---- */
@@ -328,18 +334,18 @@ function renderHeatmap(){
   const yms=Object.keys(agg);if(!yms.length)return;
   const y0=+yms[0].slice(0,4),y1=+yms[yms.length-1].slice(0,4);
   const hvYM=new Set(HALVINGS.map(d=>d.slice(0,7))),mon=new Intl.DateTimeFormat(LANG==="th"?"th-TH":"en-GB",{month:"short",timeZone:"UTC"});
-  let html='<div class="y"></div>',tbl=`<tr><th scope="col">${l.year}</th>`;
-  for(let m=1;m<=12;m++){html+=`<div class="mh">${m}</div>`;tbl+=`<th scope="col">${mon.format(Date.UTC(2000,m-1,1))}</th>`;}
+  let html='<div class="y"></div>',sr=`<tr><th scope="col">${l.year}</th>`;
+  for(let m=1;m<=12;m++){html+=`<div class="mh">${m}</div>`;sr+=`<th scope="col">${mon.format(Date.UTC(2000,m-1,1))}</th>`;}
   for(let y=y1;y>=y0;y--){
-    html+=`<div class="y">${y}</div>`;tbl+=`</tr><tr><th scope="row">${y}</th>`;
+    html+=`<div class="y">${y}</div>`;sr+=`</tr><tr><th scope="row">${y}</th>`;
     for(let m=1;m<=12;m++){
       const ym=y+"-"+String(m).padStart(2,"0"),a=agg[ym];
-      if(!a){html+='<div class="m"></div>';tbl+="<td>–</td>";continue;}
+      if(!a){html+='<div class="m"></div>';sr+="<td>–</td>";continue;}
       const avg=Math.round(a.reduce((x,v)=>x+v,0)/a.length),k=band(avg),txt=`${avg} ${l.zone[BZ[k]]}${hvYM.has(ym)?" · halving":""}`;
-      html+=`<div ${sw(k,"m"+(hvYM.has(ym)?" hv":""))} title="${esc(ym)} · ${txt}"></div>`;tbl+=`<td>${txt}</td>`;
+      html+=`<div ${sw(k,"m"+(hvYM.has(ym)?" hv":""))} title="${esc(ym)} · ${txt}"></div>`;sr+=`<td>${txt}</td>`;
     }
   }
-  hm.innerHTML=html;tb.innerHTML=tbl+"</tr>";
+  hm.innerHTML=html;tb.innerHTML=sr+"</tr>";
 }
 
 const pct=x=>(x>=0?"+":"−")+Math.abs(x*100).toFixed(0)+"%";
@@ -356,6 +362,7 @@ function renderBacktest(){
     box.appendChild(el);});
 }
 /* vertical dashed line + year label at each halving (price/score tabs) */
+const chartPx=()=>Math.round(remPx()*.75); // 12px at the default size
 const halvingPlugin={id:"hv",afterDatasetsDraw(ch){
   const xs=ch.scales.x,labels=ch.data.labels;if(!xs||!labels||!labels.length)return;
   const ctx=ch.ctx,faint=DARK()?"#6c6960":"#a9a9a2";ctx.save();
@@ -365,7 +372,7 @@ const halvingPlugin={id:"hv",afterDatasetsDraw(ch){
     const x=xs.getPixelForValue(lo);
     ctx.strokeStyle=faint;ctx.lineWidth=1;ctx.setLineDash([3,4]);
     ctx.beginPath();ctx.moveTo(x,ch.chartArea.top);ctx.lineTo(x,ch.chartArea.bottom);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle=faint;ctx.font="12px Anuphan";ctx.fillText("⛏"+d.slice(2,4),x+3,ch.chartArea.top+10);
+    ctx.fillStyle=faint;ctx.font=chartPx()+"px Anuphan";ctx.fillText("⛏"+d.slice(2,4),x+3,ch.chartArea.top+10);
   }
   ctx.restore();
 }};
@@ -383,8 +390,8 @@ function drawChart(){
   document.getElementById("chart").setAttribute("aria-label",sum);
   // Chart.js is deferred: its load event redraws; if it fails (CDN down, blocked) the page says so and keeps the summary
   if(!window.Chart){if(CHART_FAIL){fb.textContent=L().chartFail+sum;fb.hidden=false;}return;}
-  const labels=COMP.date.slice(start),ink=inkHex();
-  const grid={color:DARK()?"rgba(255,255,255,.07)":"rgba(20,20,16,.07)"},ticks={color:DARK()?"#85827b":"#6e6e69",font:{size:12,family:"Anuphan"},maxTicksLimit:5};
+  const labels=COMP.date.slice(start),ink=inkHex(),px=chartPx();
+  const grid={color:DARK()?"rgba(255,255,255,.07)":"rgba(20,20,16,.07)"},ticks={color:DARK()?"#85827b":"#6e6e69",font:{size:px,family:"Anuphan"},maxTicksLimit:5};
   const mk=(la,arr,color,w=1.8,dash=null)=>({label:la,data:arr.slice(start),borderColor:color,borderWidth:w,borderDash:dash||[],pointRadius:0,tension:.2,spanGaps:true,fill:false});
   let datasets=[],logY=false;const lg=L().lg;
   if(curKey==="price"){logY=true;datasets=[mk(lg.btc,COMP.price,ink,2),mk(lg.w200,COMP.ma200w,btcHex(),1.6),mk(lg.d200,COMP.ma200,DARK()?"#6c6960":"#a9a9a2",1,[4,4])];
@@ -396,7 +403,7 @@ function drawChart(){
   else{const s=Indicators.INDICES.find(x=>x.key===curKey);datasets=[mk(s.title,COMP[curKey],ink,2)];s.bands.forEach(b=>datasets.push({label:b.label,data:labels.map(()=>b.y),borderColor:b.color,borderWidth:1,borderDash:[5,4],pointRadius:0,fill:false}));}
   if(chart)chart.destroy();
   chart=new Chart(document.getElementById("chart"),{type:"line",data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,animation:false /* per-point animations made each draw ~15x slower (TBT/INP) */,interaction:{mode:"index",intersect:false},
-    plugins:{legend:{display:datasets.length>1,labels:{color:DARK()?"#9b988f":"#5f5f5a",font:{size:12,family:"Anuphan"},boxWidth:14,boxHeight:1,usePointStyle:false}},tooltip:{backgroundColor:DARK()?"#16181c":"#171715",titleColor:"#fafaf8",bodyColor:"#d8d8d2",borderColor:DARK()?"rgba(255,255,255,.12)":"transparent",borderWidth:1,cornerRadius:0,padding:9,titleFont:{family:"Anuphan",size:13},bodyFont:{family:"Anuphan",size:13},displayColors:false}},
+    plugins:{legend:{display:datasets.length>1,labels:{color:DARK()?"#9b988f":"#5f5f5a",font:{size:px,family:"Anuphan"},boxWidth:14,boxHeight:1,usePointStyle:false}},tooltip:{backgroundColor:DARK()?"#16181c":"#171715",titleColor:"#fafaf8",bodyColor:"#d8d8d2",borderColor:DARK()?"rgba(255,255,255,.12)":"transparent",borderWidth:1,cornerRadius:0,padding:9,titleFont:{family:"Anuphan",size:px+1},bodyFont:{family:"Anuphan",size:px+1},displayColors:false}},
     scales:{x:{grid,ticks:{...ticks,maxTicksLimit:4,callback(v){return String(this.getLabelForValue(v)).slice(0,7);}} /* YYYY-MM: full dates collide on phones */,border:{color:DARK()?"rgba(255,255,255,.13)":"rgba(20,20,16,.14)"}},y:{type:logY?"logarithmic":"linear",grid,ticks,position:"right",border:{display:false}}}},
     plugins:(curKey==="price"||curKey==="score")?[halvingPlugin]:[]});
 }

@@ -60,28 +60,32 @@ button{font:inherit;color:inherit}
 h1,h2,dl,dd{margin:0}
 h1,h2{text-wrap:balance}
 :focus-visible{outline:2.5px solid var(--btc);outline-offset:2px;border-radius:3px}
-.wrap{max-width:460px;margin:0 auto;padding:max(env(safe-area-inset-top),var(--space-lg)) var(--space-lg) calc(env(safe-area-inset-bottom) + var(--space-3xl))}
+/* gutter set per breakpoint; env() keeps content out of the notch and rounded corners in landscape */
+.wrap{--gutter:var(--space-lg);max-width:28.75rem;margin:0 auto;
+  padding:max(env(safe-area-inset-top),var(--space-lg)) max(var(--gutter),env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + var(--space-3xl)) max(var(--gutter),env(safe-area-inset-left))}
+.col-a{container:cola/inline-size} .col-b{container:colb/inline-size} /* sections adapt to their column, not the window */
 
-.mast{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-md);padding-bottom:var(--space-md);border-bottom:1.5px solid var(--ink)}
+.mast{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:var(--space-md);padding-bottom:var(--space-md);border-bottom:1.5px solid var(--ink)}
 .mast h1{font-size:var(--text-subhead);font-weight:700;line-height:1.25}
 .mast .sub{font-size:var(--text-caption);color:var(--muted);line-height:1.4;margin-top:var(--space-xs)}
-.ctrls{display:flex;gap:var(--space-sm);flex:0 0 auto}
+.mast .ttl{flex:1 1 8rem} /* in rem: at large text sizes the controls wrap below the title instead of off-screen */
+.ctrls{display:flex;gap:var(--space-sm);flex:0 0 auto;margin-left:auto}
 /* quieter than the content: a hairline, not an ink frame */
 .cbtn{font-size:var(--text-ui);font-weight:600;color:var(--ink);background:none;border:1px solid var(--line);
   padding:0 var(--space-sm);min-height:44px;min-width:44px;cursor:pointer;display:grid;place-items:center;transition:border-color .18s}
-.cbtn:hover,.cbtn:active{border-color:var(--ink)} .cbtn[aria-disabled="true"]{opacity:.4;cursor:progress}
-.cbtn svg{width:17px;height:17px;display:block}
+.cbtn:active{border-color:var(--ink)} .cbtn[aria-disabled="true"]{opacity:.4;cursor:progress}
+.cbtn svg{width:1.2em;height:1.2em;display:block} /* 17px at the default size, grows with text */
 
 .verdict{padding:var(--space-lg) 0;border-bottom:1px solid var(--line);text-align:center}
-.gauge{position:relative;width:196px;height:196px;margin:0 auto}
-.gauge svg{transform:rotate(-90deg);display:block}
+.gauge{position:relative;width:min(12.25rem,100%);aspect-ratio:1;margin:0 auto;container-type:inline-size}
+.gauge svg{transform:rotate(-90deg);display:block;width:100%;height:100%}
 .gauge .track{fill:none;stroke:var(--line-soft);stroke-width:7}
 .gauge .arc{fill:none;stroke-width:7;stroke-linecap:butt;transition:stroke-dashoffset .6s cubic-bezier(.25,1,.5,1)}
 .gauge .ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.score{font-weight:700;font-size:var(--text-display);line-height:1;letter-spacing:-.02em}
+.score{font-weight:700;font-size:var(--text-display);font-size:min(3.75rem,31cqi);line-height:1;letter-spacing:-.02em} /* the display size, capped by the ring */
 .score .max{font-size:var(--text-ui);font-weight:600;color:var(--faint);letter-spacing:0}
 .zone{font-weight:700;font-size:var(--text-title);line-height:1.25;margin-top:var(--space-md)}
-.zone-th{color:var(--muted);margin-top:var(--space-xs)}
+.zone-th{color:var(--muted);margin-top:var(--space-xs);text-wrap:balance}
 .tape{font-weight:600;margin-top:var(--space-md);display:flex;align-items:center;justify-content:center;gap:var(--space-md);flex-wrap:wrap}
 .tape .dot{width:7px;height:7px;border-radius:50%;background:var(--z-good);display:inline-block;margin-right:var(--space-xs)}
 .tape .chg.up{color:var(--z-good)} .tape .chg.down{color:var(--z-bad)}
@@ -125,17 +129,19 @@ h1,h2{text-wrap:balance}
 /* chart tabs wrap instead of scrolling sideways: every chart stays visible */
 .tabs{display:flex;flex-wrap:wrap;gap:0 var(--space-xs);border-bottom:1px solid var(--line)}
 .tabs button{font-size:var(--text-ui);font-weight:600;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;padding:var(--space-md) var(--space-sm);cursor:pointer;white-space:nowrap;min-height:44px;transition:color .18s,border-color .18s}
-.tabs button:hover{color:var(--ink)} .tabs button[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--btc)}
+.tabs button[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--btc)}
 .chart-box{position:relative;height:230px;margin-top:var(--space-md)}
 .chart-fail{position:absolute;inset:0;display:grid;place-items:center;margin:0;padding:var(--space-lg);border:1px solid var(--line-soft);font-size:var(--text-ui);line-height:1.6;color:var(--muted);text-align:center}
 
 /* option rows (chart range, backtest horizon, DCA start): one style, left-aligned */
-.ranges,.bt-h{display:flex;flex-wrap:wrap;gap:0 var(--space-lg)}
+/* option rows (chart range, backtest horizon, DCA start): one style, left-aligned. Padding makes every
+   target at least 44px wide; the negative margin lines the first label up with the text edge */
+.ranges,.bt-h{display:flex;flex-wrap:wrap;margin-left:calc(-1 * var(--space-md))}
 .ranges{margin-top:var(--space-sm)}
 .bt-h{margin-bottom:var(--space-sm)}
-.ranges button,.bt-h button{font-size:var(--text-ui);font-weight:600;color:var(--faint);background:none;border:none;cursor:pointer;padding:var(--space-sm) var(--space-xs);min-height:44px;border-bottom:1.5px solid transparent;transition:color .18s}
-.ranges button:hover,.bt-h button:hover{color:var(--ink)}
-.ranges button[aria-pressed="true"],.bt-h button[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+.ranges button,.bt-h button{position:relative;font-size:var(--text-ui);font-weight:600;color:var(--faint);background:none;border:none;cursor:pointer;padding:var(--space-sm) var(--space-md);min-width:44px;min-height:44px;transition:color .18s}
+.ranges button[aria-pressed="true"],.bt-h button[aria-pressed="true"]{color:var(--ink)}
+.ranges [aria-pressed="true"]::after,.bt-h [aria-pressed="true"]::after{content:"";position:absolute;left:var(--space-md);right:var(--space-md);bottom:0;border-bottom:1.5px solid var(--ink)}
 
 .bt-head{line-height:1.55;margin-bottom:var(--space-md)}
 .bt-head span{color:var(--faint);font-size:var(--text-caption)}
@@ -149,7 +155,6 @@ h1,h2{text-wrap:balance}
 .bt-note{font-size:var(--text-caption);color:var(--faint);margin-top:var(--space-md);line-height:1.6;max-width:65ch}
 details.method{margin-top:var(--space-xs)}
 details.method summary{cursor:pointer;font-size:var(--text-ui);color:var(--muted);padding:var(--space-md) 0;width:fit-content}
-details.method summary:hover{color:var(--ink)}
 details.method .bt-note{margin-top:0}
 
 /* data tables: DCA simulator and similar periods share one grid */
@@ -160,10 +165,19 @@ details.method .bt-note{margin-top:0}
 .tbl .num{text-align:right;font-weight:600}
 .tbl .win{color:var(--z-good)}
 .tbl .empty{grid-column:1/-1;font-weight:400;color:var(--muted)}
+/* 17rem = the four-column tables' min-content with room for bigger totals. Below it each row stacks:
+   the row label, then one line per value with its column name */
+@container colb (max-width:17rem){
+  .tbl{grid-template-columns:minmax(0,1fr)}
+  .tbl .r{padding-bottom:0;border-bottom:0}
+  .tbl .num{display:flex;justify-content:space-between;gap:var(--space-md)}
+  .tbl .num::before{content:attr(data-l);font-weight:400;color:var(--muted);text-align:left}
+  .tbl .h{display:none} /* after .num: header cells carry both classes */
+}
 
 /* heatmap */
-.hm{--c:15px;display:grid;grid-template-columns:auto repeat(12,1fr);gap:2px;margin-top:var(--space-md)}  /* 2px: cell gutters, not layout spacing */
-.hm .y{font-size:var(--text-caption);color:var(--faint);align-self:center;padding-right:var(--space-sm);text-align:right}
+.hm{--c:.9375rem;display:grid;grid-template-columns:auto repeat(12,minmax(0,1fr));gap:2px;margin-top:var(--space-md)}  /* 2px: cell gutters, not layout spacing */
+.hm .y{font-size:var(--text-caption);line-height:var(--c);color:var(--faint);padding-right:var(--space-sm);text-align:right}
 .hm .m{height:var(--c);border-radius:1px;background-color:var(--line-soft);position:relative}
 .hm .mh{font-size:var(--text-caption);color:var(--faint);text-align:center;padding-bottom:var(--space-xs)}
 /* not color alone: pricey/expensive cells are hatched, halving months carry a dot (the key below shows both) */
@@ -171,7 +185,8 @@ details.method .bt-note{margin-top:0}
 .hv::after{content:"";position:absolute;top:50%;left:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:var(--bg)}
 .hm-key{display:flex;flex-wrap:wrap;gap:var(--space-xs) var(--space-lg);margin-top:var(--space-md);font-size:var(--text-caption);color:var(--muted)}
 .hm-key span{display:inline-flex;align-items:center;gap:var(--space-sm)}
-.hm-key i{position:relative;flex:0 0 auto;width:15px;height:15px;border-radius:1px}
+.hm-key{--c:.9375rem} .hm-key i{position:relative;flex:0 0 auto;width:var(--c);height:var(--c);border-radius:1px} /* swatch = cell size */
+@container colb (max-width:16rem){.hm .mh:not(:nth-child(3n+2)){visibility:hidden}} /* 12 month numbers don't fit: label quarters (1 4 7 10) */
 
 .foot{margin-top:var(--space-3xl);padding-top:var(--space-lg);border-top:1px solid var(--line);font-size:var(--text-caption);line-height:1.7;color:var(--muted)}
 .foot a{color:var(--muted);text-decoration:underline;text-underline-offset:2px}
@@ -183,17 +198,18 @@ details.method .bt-note{margin-top:0}
   background:repeating-linear-gradient(transparent 0 calc(var(--p) - 1px),var(--line-soft) calc(var(--p) - 1px) var(--p))}
 .is-loading .tx:empty{background:repeating-linear-gradient(transparent 0 .3lh,var(--line-soft) .3lh .8lh,transparent .8lh 1lh)}
 .is-loading .verdict .tx:empty{background-size:12rem 100%;background-repeat:no-repeat;background-position:top}
-.is-loading #hm:empty{background:repeating-linear-gradient(var(--line-soft) 0 var(--c),transparent var(--c) calc(var(--text-caption) * 1.6 + 2px))} /* row = year label + gutter */
+.is-loading #hm:empty{background:repeating-linear-gradient(var(--line-soft) 0 var(--c),transparent var(--c) calc(var(--c) + 2px))}
 .is-loading .chart-box{background:repeating-linear-gradient(transparent 0 calc(25% - 1px),var(--line-soft) calc(25% - 1px) 25%)}
 .is-loading .row .spark{background:var(--line-soft)}
 .is-loading :is(.score,.zone,.row .val){color:var(--faint)}  /* the dashes are placeholders, not values */
 .is-loading :is(.sk:empty,.chart-box,.row .spark){animation:sk 1.2s ease-in-out infinite alternate}
 .is-loading.failed :is(.sk:empty,.chart-box,.row .spark){animation:none;opacity:.5}
 @keyframes sk{to{opacity:.4}}
-/* sizes measured with real data at 375px (desktop below); text slots in lines. English wraps more on phones */
+/* first-visit sizes, measured with real data at 375 / 768 / 1280px (tablet and desktop in their blocks); text slots
+   in lines. After one load app.js remembers this device's real heights (skSave), which then override these */
 #zoneth{--h:1lh} #asof{--h:2lh} #ins-dca{--h:2lh} #ins-inval{--h:3lh} #bthead{--h:3lh} #dcaHead{--h:2lh}
-#bt{--h:15.9rem;--p:3.18rem} #dcaGrid{--h:8.85rem;--p:2.95rem} #cycRows{--h:11.8rem;--p:2.95rem} #hm{--h:20.1rem}
-@media (max-width:959px){#zoneth:lang(en){--h:2lh} :is(#ins-dca,#dcaHead):lang(en){--h:3lh} #dcaGrid:lang(en){--h:10.15rem} #cycRows:lang(en){--h:13.1rem}}
+#bt{--h:15.9rem;--p:3.18rem} #dcaGrid{--h:8.85rem;--p:2.95rem} #cycRows{--h:11.8rem;--p:2.95rem} #hm{--h:15.4rem}
+@media (width < 40em){#zoneth:lang(en){--h:2lh} :is(#ins-dca,#dcaHead):lang(en){--h:3lh} #dcaGrid:lang(en){--h:10.15rem} #cycRows:lang(en){--h:13.1rem}}
 
 /* load failure: sits in the verdict, where the answer would be. Full hairline border, no side stripe */
 .alert{display:flex;align-items:center;gap:var(--space-md);margin-top:var(--space-lg);padding:var(--space-md);border:1px solid var(--line);background:var(--surface);text-align:left}
@@ -201,23 +217,43 @@ details.method .bt-note{margin-top:0}
 .alert small{display:block;margin-top:var(--space-xs);font-size:var(--text-caption);font-weight:400;color:var(--faint);overflow-wrap:anywhere}
 .alert .cbtn{padding:0 var(--space-md);white-space:nowrap}
 .sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-.nojs{max-width:460px;margin:var(--space-3xl) auto;padding:0 var(--space-lg);color:var(--muted)}
+.nojs{max-width:28.75rem;margin:var(--space-3xl) auto;padding:0 var(--space-lg);color:var(--muted)}
 @media (prefers-reduced-motion: reduce){.gauge .arc,body{transition:none}.is-loading :is(.sk:empty,.chart-box,.row .spark){animation:none}}
-@media (max-width:360px){.score{font-size:3.25rem}.gauge{width:172px;height:172px}.mast h1{font-size:1.125rem}}
+@media (max-width:22.5em){.gauge{width:min(10.75rem,100%)}.mast h1{font-size:1.125rem}}
+@media (hover:hover){.cbtn:hover{border-color:var(--ink)} :is(.tabs,.ranges,.bt-h) button:hover,details.method summary:hover{color:var(--ink)}}
+
+/* index rows two-up once the column can hold two (tablet, wide desktop; not the 1024px desktop column) */
+@container colb (min-width:34rem){.rows{display:grid;grid-template-columns:1fr 1fr;column-gap:var(--space-3xl)}}
+/* wide single column (tablet, landscape phone): the ring sits beside the verdict text, so the plan starts higher */
+@container cola (min-width:36rem){
+  .verdict{display:flex;align-items:center;gap:var(--space-2xl);text-align:left}
+  .gauge{margin:0;flex:0 0 auto}
+  .vtext{flex:1}
+  .zone{margin-top:0}
+  .tape{justify-content:flex-start}
+  .is-loading .verdict .tx:empty{background-position:left top}
+}
+
+/* Breakpoints and widths in em/rem: identical at the default text size (40em = 640px, 60em = 960px); a reader
+   who sets a larger default font gets the layout of a narrower screen instead of cramped columns */
+/* ---------- tablet and landscape phone: one wider column ---------- */
+@media (min-width:40em){
+  .wrap{--gutter:var(--space-2xl);max-width:45rem}
+  .chart-box{height:300px}
+  .hm{--c:1.1875rem}
+  #ins-inval{--h:2lh} #bthead{--h:2lh} #hm{--h:18.6rem} :is(#ins-dca,#dcaHead):lang(th){--h:1lh}
+}
 
 /* ---------- desktop: two-column layout ---------- */
-@media (min-width:960px){
-  .wrap{max-width:1180px;padding-left:var(--space-3xl);padding-right:var(--space-3xl)}
-  .cols{display:grid;grid-template-columns:400px minmax(0,1fr);gap:0 var(--space-4xl);align-items:start;margin-top:var(--space-xs)}
+@media (min-width:60em){
+  .wrap{--gutter:var(--space-3xl);max-width:73.75rem}
+  .cols{display:grid;grid-template-columns:25rem minmax(0,1fr);gap:0 var(--space-4xl);align-items:start;margin-top:var(--space-xs)}
   .col-a{position:sticky;top:var(--space-lg);max-height:calc(100dvh - 2 * var(--space-lg));overflow-y:auto;scrollbar-width:none;padding-right:var(--space-xs)}
   .col-a::-webkit-scrollbar{display:none}
   .col-b>.lbl:first-child{margin-top:var(--space-xl)}
-  /* index rows: 2-up grid to use width */
-  .rows{display:grid;grid-template-columns:1fr 1fr;column-gap:var(--space-3xl)}
   .chart-box{height:340px}
-  .hm{--c:19px}
-  #bthead{--h:2lh} #ins-inval:lang(th){--h:2lh}
-  .tbl,.bt-rows{max-width:640px}
+  #ins-inval:lang(en){--h:3lh} :is(#ins-dca,#dcaHead):lang(th){--h:2lh}
+  .tbl,.bt-rows{max-width:40rem}
 }
 </style>
 </head>
@@ -226,7 +262,7 @@ details.method .bt-note{margin-top:0}
 <!-- shown by app.js once labelled; .is-loading = skeleton until the data lands -->
 <div class="wrap is-loading" id="app" hidden>
   <header class="mast">
-    <div><h1>Bitcoin Accumulation</h1><div class="sub" id="m-sub"></div></div>
+    <div class="ttl"><h1>Bitcoin Accumulation</h1><div class="sub" id="m-sub"></div></div>
     <div class="ctrls">
       <button class="cbtn" id="langBtn" title="ภาษา / Language">EN</button>
       <button class="cbtn" id="themeBtn" aria-label="theme"></button>
@@ -243,11 +279,13 @@ details.method .bt-note{margin-top:0}
       </svg>
       <div class="ctr" aria-hidden="true"><div class="score" id="score">–<span class="max">/100</span></div></div>
     </div>
+    <div class="vtext">
     <div class="zone" id="zone">–</div>
     <div class="zone-th sk tx" id="zoneth"></div>
     <div class="tape"><span id="price">$–</span><span class="chg" id="chg"></span></div>
     <div class="asof sk tx" id="asof"></div>
     <div class="alert" id="err" role="alert" hidden><p id="errmsg"></p><button class="cbtn" id="retry"></button></div>
+    </div>
   </section>
 
   <!-- the recommendation, said once; then the few facts it rests on -->
@@ -312,6 +350,6 @@ details.method .bt-note{margin-top:0}
 
 <p class="sr" id="live" role="status"></p>
 <script src="indicators.js?v=5"></script>
-<script src="app.js?v=11"></script>
+<script src="app.js?v=12"></script>
 </body>
 </html>
