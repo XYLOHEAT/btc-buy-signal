@@ -1,7 +1,7 @@
 /* BTC Accumulation Signal — service worker (offline + fast repeat loads) */
-const CACHE = "btc-accum-v17";
+const CACHE = "btc-accum-v18";
 const SHELL = [
-  "./", "./index.html", "./indicators.js?v=5", "./app.js?v=10", "./manifest.webmanifest",
+  "./", "./index.html", "./indicators.js?v=5", "./app.js?v=11", "./manifest.webmanifest",
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./icon.svg",
   "https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js",
 ];
@@ -21,9 +21,9 @@ self.addEventListener("activate", (e) => {
 
 // data hosts: network-first (fresh, fall back to last-cached when offline).
 // Exact-hostname match (not a substring regex) so look-alike hosts don't match.
-const DATA_HOSTS = new Set([
-  "api.binance.com", "api.coingecko.com", "bitcoin-data.com", "raw.githubusercontent.com",
-]);
+const DATA_HOSTS = new Set(["raw.githubusercontent.com"]);
+// live price: network only. A cached price shown as "live" would be wrong; the page says when it's missing
+const LIVE_HOSTS = new Set(["api.binance.com", "api.coingecko.com"]);
 
 // Concurrent requests for the same URL share one network fetch. Chrome won't reuse the
 // page's <link rel=preload> for data.json once a SW controls the page, so without this
@@ -40,7 +40,10 @@ function networkFirst(req) {
     inflight.set(req.url, p);
     p.catch(() => {}).finally(() => inflight.delete(req.url));
   }
-  return p.then((r) => r.clone()).catch(() => caches.match(req));
+  const net = p.then((r) => r.clone());
+  // slow network: after 4 s answer from the cache if there is a copy; the fetch keeps going and refreshes it
+  const slow = new Promise((ok) => setTimeout(ok, 4000)).then(() => caches.match(req)).then((c) => c || net);
+  return Promise.race([net, slow]).catch(() => caches.match(req));
 }
 
 self.addEventListener("fetch", (e) => {
@@ -48,6 +51,7 @@ self.addEventListener("fetch", (e) => {
   const url = e.request.url;
   let host = "";
   try { host = new URL(url).hostname; } catch (_) {}
+  if (LIVE_HOSTS.has(host)) return;
   // network-first for the HTML shell (so deploys reach installed users) + live data
   if (e.request.mode === "navigate" || url.endsWith("/index.html") || DATA_HOSTS.has(host) || url.endsWith("/data.json")) {
     e.respondWith(networkFirst(e.request));

@@ -30,7 +30,7 @@
   /* text colors stay >= 4.5:1 on --bg and --surface (WCAG AA); --faint is the floor */
   --bg:#f3f3f0; --surface:#fafaf8; --ink:#171715; --muted:#5f5f5a; --faint:#6e6e69;
   --line:rgba(20,20,16,.14); --line-soft:rgba(20,20,16,.07);
-  --btc:#c96b08;
+  --btc:#c96b08; --hatch:rgba(255,255,255,.42);
   --z-good:#1c7a47; --z-ok:#5a7711; --z-neutral:#926500; --z-warn:#ae5318; --z-bad:#bb2f24;
   --font:'Anuphan',system-ui,-apple-system,'Segoe UI',sans-serif;
   /* type scale: fixed rem steps (product UI). 13px is the floor: Thai vowel and tone marks need it */
@@ -46,16 +46,17 @@
 }
 /* dark zone ramp: OKLCH L .71-.80, C .10-.11 (calm; was stock Tailwind 400s at C .15-.19) */
 .dk{ --bg:#0e0f12; --surface:#16181c; --ink:#e9e7e1; --muted:#9b988f; --faint:#85827b;
-  --line:rgba(255,255,255,.13); --line-soft:rgba(255,255,255,.06); --btc:#f7931a;
+  --line:rgba(255,255,255,.13); --line-soft:rgba(255,255,255,.06); --btc:#f7931a; --hatch:rgba(14,15,18,.4);
   --z-good:#75c59b; --z-ok:#abca84; --z-neutral:#dbb970; --z-warn:#dc9a6c; --z-bad:#de857e; }
 @media (prefers-color-scheme: dark){ :root:not(.lt){
   --bg:#0e0f12; --surface:#16181c; --ink:#e9e7e1; --muted:#9b988f; --faint:#85827b;
-  --line:rgba(255,255,255,.13); --line-soft:rgba(255,255,255,.06); --btc:#f7931a;
+  --line:rgba(255,255,255,.13); --line-soft:rgba(255,255,255,.06); --btc:#f7931a; --hatch:rgba(14,15,18,.4);
   --z-good:#75c59b; --z-ok:#abca84; --z-neutral:#dbb970; --z-warn:#dc9a6c; --z-bad:#de857e; }}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:var(--text-body);line-height:1.6;font-kerning:normal;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s}
 button{font:inherit;color:inherit}
+[hidden]{display:none!important} /* author display rules (.facts div, .alert) must not beat the hidden attribute */
 h1,h2,dl,dd{margin:0}
 h1,h2{text-wrap:balance}
 :focus-visible{outline:2.5px solid var(--btc);outline-offset:2px;border-radius:3px}
@@ -68,7 +69,7 @@ h1,h2{text-wrap:balance}
 /* quieter than the content: a hairline, not an ink frame */
 .cbtn{font-size:var(--text-ui);font-weight:600;color:var(--ink);background:none;border:1px solid var(--line);
   padding:0 var(--space-sm);min-height:44px;min-width:44px;cursor:pointer;display:grid;place-items:center;transition:border-color .18s}
-.cbtn:hover,.cbtn:active{border-color:var(--ink)} .cbtn.busy{opacity:.4}
+.cbtn:hover,.cbtn:active{border-color:var(--ink)} .cbtn[aria-disabled="true"]{opacity:.4;cursor:progress}
 .cbtn svg{width:17px;height:17px;display:block}
 
 .verdict{padding:var(--space-lg) 0;border-bottom:1px solid var(--line);text-align:center}
@@ -124,8 +125,9 @@ h1,h2{text-wrap:balance}
 /* chart tabs wrap instead of scrolling sideways: every chart stays visible */
 .tabs{display:flex;flex-wrap:wrap;gap:0 var(--space-xs);border-bottom:1px solid var(--line)}
 .tabs button{font-size:var(--text-ui);font-weight:600;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;padding:var(--space-md) var(--space-sm);cursor:pointer;white-space:nowrap;min-height:44px;transition:color .18s,border-color .18s}
-.tabs button:hover{color:var(--ink)} .tabs button.on{color:var(--ink);border-bottom-color:var(--btc)}
+.tabs button:hover{color:var(--ink)} .tabs button[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--btc)}
 .chart-box{position:relative;height:230px;margin-top:var(--space-md)}
+.chart-fail{position:absolute;inset:0;display:grid;place-items:center;margin:0;padding:var(--space-lg);border:1px solid var(--line-soft);font-size:var(--text-ui);line-height:1.6;color:var(--muted);text-align:center}
 
 /* option rows (chart range, backtest horizon, DCA start): one style, left-aligned */
 .ranges,.bt-h{display:flex;flex-wrap:wrap;gap:0 var(--space-lg)}
@@ -133,7 +135,7 @@ h1,h2{text-wrap:balance}
 .bt-h{margin-bottom:var(--space-sm)}
 .ranges button,.bt-h button{font-size:var(--text-ui);font-weight:600;color:var(--faint);background:none;border:none;cursor:pointer;padding:var(--space-sm) var(--space-xs);min-height:44px;border-bottom:1.5px solid transparent;transition:color .18s}
 .ranges button:hover,.bt-h button:hover{color:var(--ink)}
-.ranges button.on,.bt-h button.on{color:var(--ink);border-bottom-color:var(--ink)}
+.ranges button[aria-pressed="true"],.bt-h button[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--ink)}
 
 .bt-head{line-height:1.55;margin-bottom:var(--space-md)}
 .bt-head span{color:var(--faint);font-size:var(--text-caption)}
@@ -157,22 +159,50 @@ details.method .bt-note{margin-top:0}
 .tbl .r{font-weight:600}
 .tbl .num{text-align:right;font-weight:600}
 .tbl .win{color:var(--z-good)}
+.tbl .empty{grid-column:1/-1;font-weight:400;color:var(--muted)}
 
 /* heatmap */
-.hm{display:grid;grid-template-columns:auto repeat(12,1fr);gap:2px;margin-top:var(--space-md)}  /* 2px: cell gutters, not layout spacing */
+.hm{--c:15px;display:grid;grid-template-columns:auto repeat(12,1fr);gap:2px;margin-top:var(--space-md)}  /* 2px: cell gutters, not layout spacing */
 .hm .y{font-size:var(--text-caption);color:var(--faint);align-self:center;padding-right:var(--space-sm);text-align:right}
-.hm .m{height:15px;border-radius:1px;background:var(--line-soft);position:relative}
+.hm .m{height:var(--c);border-radius:1px;background-color:var(--line-soft);position:relative}
 .hm .mh{font-size:var(--text-caption);color:var(--faint);text-align:center;padding-bottom:var(--space-xs)}
-.hm .hv::after{content:"⛏";position:absolute;inset:0;display:grid;place-items:center;font-size:8px}
+/* not color alone: pricey/expensive cells are hatched, halving months carry a dot (the key below shows both) */
+.hot{background-image:repeating-linear-gradient(135deg,var(--hatch) 0 1.5px,transparent 1.5px 4.5px)}
+.hv::after{content:"";position:absolute;top:50%;left:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:var(--bg)}
+.hm-key{display:flex;flex-wrap:wrap;gap:var(--space-xs) var(--space-lg);margin-top:var(--space-md);font-size:var(--text-caption);color:var(--muted)}
+.hm-key span{display:inline-flex;align-items:center;gap:var(--space-sm)}
+.hm-key i{position:relative;flex:0 0 auto;width:15px;height:15px;border-radius:1px}
 
 .foot{margin-top:var(--space-3xl);padding-top:var(--space-lg);border-top:1px solid var(--line);font-size:var(--text-caption);line-height:1.7;color:var(--muted)}
 .foot a{color:var(--muted);text-decoration:underline;text-underline-offset:2px}
 
-.overlay{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:var(--bg);transition:opacity .4s;text-align:center;padding:var(--space-xl)}
-.overlay.gone{opacity:0;pointer-events:none}
-.overlay p{font-size:var(--text-ui);color:var(--muted);margin:0}
-.overlay .err{color:var(--z-bad);max-width:280px}
-@media (prefers-reduced-motion: reduce){.gauge .arc,body{transition:none}}
+/* loading: the shell shows at once and each empty data slot holds its measured size, so nothing jumps when
+   data lands. Tables show their rulings, text slots faint lines, one slow pulse says "working". A failed
+   load stops the pulse and dims it; the error box in the verdict says what happened */
+.is-loading .sk:empty{min-height:var(--h);
+  background:repeating-linear-gradient(transparent 0 calc(var(--p) - 1px),var(--line-soft) calc(var(--p) - 1px) var(--p))}
+.is-loading .tx:empty{background:repeating-linear-gradient(transparent 0 .3lh,var(--line-soft) .3lh .8lh,transparent .8lh 1lh)}
+.is-loading .verdict .tx:empty{background-size:12rem 100%;background-repeat:no-repeat;background-position:top}
+.is-loading #hm:empty{background:repeating-linear-gradient(var(--line-soft) 0 var(--c),transparent var(--c) calc(var(--text-caption) * 1.6 + 2px))} /* row = year label + gutter */
+.is-loading .chart-box{background:repeating-linear-gradient(transparent 0 calc(25% - 1px),var(--line-soft) calc(25% - 1px) 25%)}
+.is-loading .row .spark{background:var(--line-soft)}
+.is-loading :is(.score,.zone,.row .val){color:var(--faint)}  /* the dashes are placeholders, not values */
+.is-loading :is(.sk:empty,.chart-box,.row .spark){animation:sk 1.2s ease-in-out infinite alternate}
+.is-loading.failed :is(.sk:empty,.chart-box,.row .spark){animation:none;opacity:.5}
+@keyframes sk{to{opacity:.4}}
+/* sizes measured with real data at 375px (desktop below); text slots in lines. English wraps more on phones */
+#zoneth{--h:1lh} #asof{--h:2lh} #ins-dca{--h:2lh} #ins-inval{--h:3lh} #bthead{--h:3lh} #dcaHead{--h:2lh}
+#bt{--h:15.9rem;--p:3.18rem} #dcaGrid{--h:8.85rem;--p:2.95rem} #cycRows{--h:11.8rem;--p:2.95rem} #hm{--h:20.1rem}
+@media (max-width:959px){#zoneth:lang(en){--h:2lh} :is(#ins-dca,#dcaHead):lang(en){--h:3lh} #dcaGrid:lang(en){--h:10.15rem} #cycRows:lang(en){--h:13.1rem}}
+
+/* load failure: sits in the verdict, where the answer would be. Full hairline border, no side stripe */
+.alert{display:flex;align-items:center;gap:var(--space-md);margin-top:var(--space-lg);padding:var(--space-md);border:1px solid var(--line);background:var(--surface);text-align:left}
+.alert p{flex:1;margin:0;font-size:var(--text-ui);font-weight:600;line-height:1.5;color:var(--z-bad)}
+.alert small{display:block;margin-top:var(--space-xs);font-size:var(--text-caption);font-weight:400;color:var(--faint);overflow-wrap:anywhere}
+.alert .cbtn{padding:0 var(--space-md);white-space:nowrap}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.nojs{max-width:460px;margin:var(--space-3xl) auto;padding:0 var(--space-lg);color:var(--muted)}
+@media (prefers-reduced-motion: reduce){.gauge .arc,body{transition:none}.is-loading :is(.sk:empty,.chart-box,.row .spark){animation:none}}
 @media (max-width:360px){.score{font-size:3.25rem}.gauge{width:172px;height:172px}.mast h1{font-size:1.125rem}}
 
 /* ---------- desktop: two-column layout ---------- */
@@ -185,15 +215,16 @@ details.method .bt-note{margin-top:0}
   /* index rows: 2-up grid to use width */
   .rows{display:grid;grid-template-columns:1fr 1fr;column-gap:var(--space-3xl)}
   .chart-box{height:340px}
-  .hm .m{height:19px}
+  .hm{--c:19px}
+  #bthead{--h:2lh} #ins-inval:lang(th){--h:2lh}
   .tbl,.bt-rows{max-width:640px}
 }
 </style>
 </head>
 <body>
-<div class="overlay" id="ov"><p id="ovmsg">…</p></div>
-
-<div class="wrap" id="app" hidden>
+<noscript><p class="nojs">หน้านี้ต้องเปิด JavaScript · This page needs JavaScript.</p></noscript>
+<!-- shown by app.js once labelled; .is-loading = skeleton until the data lands -->
+<div class="wrap is-loading" id="app" hidden>
   <header class="mast">
     <div><h1>Bitcoin Accumulation</h1><div class="sub" id="m-sub"></div></div>
     <div class="ctrls">
@@ -210,25 +241,26 @@ details.method .bt-note{margin-top:0}
       <svg width="196" height="196" viewBox="0 0 196 196" role="img" aria-label="accumulation score">
         <circle class="track" cx="98" cy="98" r="88"/><circle class="arc" id="arc" cx="98" cy="98" r="88"/>
       </svg>
-      <div class="ctr"><div class="score" id="score">0<span class="max">/100</span></div></div>
+      <div class="ctr" aria-hidden="true"><div class="score" id="score">–<span class="max">/100</span></div></div>
     </div>
     <div class="zone" id="zone">–</div>
-    <div class="zone-th" id="zoneth"></div>
+    <div class="zone-th sk tx" id="zoneth"></div>
     <div class="tape"><span id="price">$–</span><span class="chg" id="chg"></span></div>
-    <div class="asof" id="asof"></div>
+    <div class="asof sk tx" id="asof"></div>
+    <div class="alert" id="err" role="alert" hidden><p id="errmsg"></p><button class="cbtn" id="retry"></button></div>
   </section>
 
   <!-- the recommendation, said once; then the few facts it rests on -->
   <dl class="plan">
-    <div><dt id="ins-action-l"></dt><dd id="ins-dca"></dd></div>
-    <div><dt id="ins-inval-l"></dt><dd id="ins-inval"></dd></div>
+    <div><dt id="ins-action-l"></dt><dd class="sk tx" id="ins-dca"></dd></div>
+    <div><dt id="ins-inval-l"></dt><dd class="sk tx" id="ins-inval"></dd></div>
   </dl>
   <p class="disc" id="ins-disc"></p>
 
   <dl class="facts">
     <div><dt id="s-mom-l"></dt><dd id="s-mom">–</dd></div>
-    <div id="s-rp-wrap" hidden><dt id="s-rp-l"></dt><dd id="s-rp">–</dd></div>
-    <div id="s-nupl-wrap" hidden><dt id="s-nupl-l"></dt><dd id="s-nupl">–</dd></div>
+    <div id="s-rp-wrap"><dt id="s-rp-l"></dt><dd id="s-rp">–</dd></div>
+    <div id="s-nupl-wrap"><dt id="s-nupl-l"></dt><dd id="s-nupl">–</dd></div>
   </dl>
   </div><!-- /col-a -->
 
@@ -238,37 +270,39 @@ details.method .bt-note{margin-top:0}
 
   <section>
     <h2 class="lbl" id="lbl-charts"></h2>
-    <div class="tabs" id="tabs"></div>
-    <div class="chart-box"><canvas id="chart"></canvas></div>
-    <div class="ranges" id="ranges"></div>
+    <div class="tabs" id="tabs" role="group"></div>
+    <div class="chart-box"><canvas id="chart" role="img"></canvas><p class="chart-fail" id="chartFail" hidden></p></div>
+    <div class="ranges" id="ranges" role="group"></div>
   </section>
 
   <section>
     <h2 class="lbl" id="lbl-bt"></h2>
-    <div class="bt-h" id="bth"></div>
-    <div class="bt-head" id="bthead"></div>
-    <div class="bt-rows" id="bt"></div>
+    <div class="bt-h" id="bth" role="group"></div>
+    <div class="bt-head sk tx" id="bthead"></div>
+    <div class="bt-rows sk" id="bt"></div>
     <details class="method"><summary id="bt-note-s"></summary><div class="bt-note" id="bt-note"></div></details>
   </section>
 
   <section>
     <h2 class="lbl" id="lbl-dca"></h2>
-    <div class="bt-h" id="dcaRange"></div>
-    <div class="bt-head" id="dcaHead"></div>
-    <div class="tbl" id="dcaGrid"></div>
+    <div class="bt-h" id="dcaRange" role="group"></div>
+    <div class="bt-head sk tx" id="dcaHead"></div>
+    <div class="tbl sk" id="dcaGrid"></div>
     <details class="method"><summary id="dca-note-s"></summary><div class="bt-note" id="dca-note"></div></details>
   </section>
 
   <section>
     <h2 class="lbl" id="lbl-cyc"></h2>
-    <div class="tbl" id="cycRows"></div>
+    <div class="tbl sk" id="cycRows"></div>
     <details class="method"><summary id="cyc-note-s"></summary><div class="bt-note" id="cyc-note"></div></details>
   </section>
 
   <section>
     <h2 class="lbl" id="lbl-hm"></h2>
-    <div class="hm" id="hm"></div>
-    <div class="bt-note" id="hm-note"></div>
+    <!-- the grid is visual only; screen readers get the same months as a table -->
+    <div class="hm sk" id="hm" aria-hidden="true"></div>
+    <div class="sr"><table id="hmTbl" aria-labelledby="lbl-hm"></table></div><!-- wrapper: a table won't shrink to 1px and would widen the page -->
+    <div class="hm-key" id="hmKey" aria-hidden="true"></div>
   </section>
   </div><!-- /col-b -->
   </main><!-- /cols -->
@@ -276,7 +310,8 @@ details.method .bt-note{margin-top:0}
   <footer class="foot" id="foot"></footer>
 </div>
 
+<p class="sr" id="live" role="status"></p>
 <script src="indicators.js?v=5"></script>
-<script src="app.js?v=10"></script>
+<script src="app.js?v=11"></script>
 </body>
 </html>

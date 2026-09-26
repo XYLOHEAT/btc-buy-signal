@@ -19,10 +19,10 @@ Live: https://xyloheat.github.io/btc-buy-signal/ (GitHub Pages serves this repo 
 | `app.js` | UI: i18n strings (`T`), render, charts, heatmap, DCA sim, backtest, theme/lang toggles. |
 | `indicators.js` | Pure compute. No DOM. Also loadable in Node (`module.exports`) — that's how you test it. |
 | `build_data.py` | Stdlib-only. Builds `data.json`. Run daily by `.github/workflows/data.yml`. |
-| `sw.js` | Service worker. Network-first for HTML + data (concurrent requests for one URL share a fetch — Chrome ignores the `data.json` preload under a SW), cache-first for static. |
+| `sw.js` | Service worker. Network-first for HTML + data (concurrent requests for one URL share a fetch — Chrome ignores the `data.json` preload under a SW; on a slow network the cached copy answers after 4 s), cache-first for static. The live price (Binance/CoinGecko) bypasses it, so a cached price is never shown as live. |
 | `data.json` | Generated. **Never hand-edit** — the daily Action overwrites it. |
 | `fonts/` | Self-hosted woff2 subsets of **Anuphan**, the only typeface (Thai + Latin, tabular digits) + its OFL licence. `@font-face` rules sit at the top of `index.html`'s `<style>` (ADR-012). |
-| `docs/adr.md` | 12 decisions with context + consequences. |
+| `docs/adr.md` | Every architecture/design decision with context + consequences. |
 
 ## Data flow
 
@@ -69,13 +69,13 @@ Always run this after touching `indicators.js`. Compare the score before and aft
 
 **Add a new index** → add a compute column in `computeAll()`, then an `INDICES` entry, then TH+EN strings in `app.js` `T` (`status`, `metric`, `read`). The UI loops over `INDICES`, so cards, tooltips and chart tabs appear automatically.
 
-**Edit any visible text** → `app.js`, the `T` object (line 6). Zone names are one vocabulary (`T.*.zone`, ADR-014): valuation words, never stance words; actions go in `T.*.dca`/`act`. No em dashes in copy. `T.th` and `T.en` are parallel; **add to both or the other language silently breaks**. Static labels are wired in `applyStaticLang()` (line 166); dynamic ones inside `render()` (line 189).
+**Edit any visible text** → `app.js`, the `T` object (line 6). Zone names are one vocabulary (`T.*.zone`, ADR-014): valuation words, never stance words; actions go in `T.*.dca`/`act`. No em dashes in copy. `T.th` and `T.en` are parallel; **add to both or the other language silently breaks**. Static labels are wired in `applyStaticLang()` (line 202); dynamic ones inside `render()` (line 231).
 
 **Add a new data metric from bitcoin-data.com** → `build_data.py`, add a `bd_last("<endpoint>")` call into the `fresh` dict, then read `FRESH.<key>` in `app.js`. Keep the Action's total bitcoin-data calls in single digits.
 
 **Styling** → `index.html` `<style>`. CSS variables at `:root`; dark mode overrides under `.dk` and the `prefers-color-scheme` block. Desktop two-column layout lives in the `@media (min-width:960px)` block. Type is one family (Anuphan) on a fixed rem scale: `--text-caption` 13px (the floor; Thai marks need it), `--text-ui` 14, `--text-body` 16, `--text-subhead` 20, `--text-title` 24, `--text-display` 60. No new sizes, no uppercase text-transform, no letter-spacing on anything that can contain Thai (ADR-013). Spacing uses the 4pt rem tokens `--space-xs` 4 · `sm` 8 · `md` 12 · `lg` 16 · `xl` 24 · `2xl` 32 · `3xl` 48 · `4xl` 64; no off-scale margins or paddings (px is only for sizes: borders, 44px targets, the ring, chart heights). Sections sit 48px apart; data tables share `.tbl`; option rows (range, horizon, DCA start) share one left-aligned style. Text colors must stay **≥ 4.5:1** against `--bg` and `--surface` in both themes (`--faint` is the floor). BTC orange marks selection, focus and the brand ring only: never small text, never badges. Zone colors mark state (ring, zone name, statuses), never big figures. Chart colors are hard-coded hex in `app.js` (`ZHEX`, `drawChart` ticks) — keep them in sync with the CSS variables.
 
-**Section anchors in `app.js`**: `getRaw` 124 · `applyStaticLang` 166 · `render` 189 · `renderDca` 244 · `renderCycle` 257 · `renderHeatmap` 267 · `renderBacktest` 295 · `drawChart` 328.
+**Section anchors in `app.js`**: `getRaw` 139 · `load` 153 · `applyStaticLang` 202 · `render` 231 · `renderRows` 263 · `buildOpts` 289 · `renderDca` 298 · `renderCycle` 311 · `renderHeatmap` 323 · `renderBacktest` 347 · `drawChart` 381.
 
 ## Hard constraints — do not break these
 
@@ -103,5 +103,9 @@ Trigger manually: `gh workflow run data.yml`.
 - Service worker caching is the usual reason a change "didn't deploy".
 - **bitcoin-data.com's free tier is delayed 7 days** (since 2026-09; responses carry `"delayed": true`). An on-chain date 7–8 days old is normal; the ⚠ stale badge only shows past 10 days. Because of that delay, `fresh.mvrv`/`fresh.puell` are **not** applied to the score — today's values come from our own series at the live price. `fresh.date` drives the on-chain date line; `fresh.realizedPrice` drives the realized price and NUPL (computed as 1 − realized / live price).
 - **Keep Chart.js `animation:false`.** Per-point animations made every draw ~15× slower (47 ms → 3 ms on a Mac, roughly 4× worse on a phone) — that was most of Lighthouse's Total Blocking Time, and it hit every chart-tab click too.
-- **Chart.js is `defer`red** (`<script id="chartjs">`); `drawChart()` waits for that tag's `load` event, so a CDN failure leaves the page working, just without the chart. `indicators.js`/`app.js` stay plain scripts at the end of `<body>` so the saved theme applies as early as possible — deferring them adds a wrong-theme flash for users with a manual theme.
+- **Chart.js is `defer`red** (`<script id="chartjs">`); init listens for that tag's `load`/`error` and redraws. If it fails, the chart box shows the chart as a sentence (the same summary the canvas carries as its `aria-label`); the rest of the page is unaffected.
+- **Loading = skeleton, not an overlay** (ADR-017). `#app.is-loading` shows the shell at once; every empty `.sk` slot reserves `--h`, a height measured with real data (per language and width, in `index.html`). Change a section's layout or copy length and re-measure at 375 px and 1280 px in TH and EN, or the page jumps when data lands. Index rows are their own skeleton (`renderRows()` with no `SNAP` prints the real rows with "–").
+- **One load path**: first load, ↻ refresh and the error box's retry all go through `load()`, guarded against double runs. Every fetch has a deadline (`get()`: price 4 s per source, `data.json` 15 s, CSV 30 s). A data failure shows an error box with retry inside the verdict and keeps the live price; it never blanks the page.
+- **Option rows** (chart, range, backtest horizon, DCA start) are `aria-pressed` toggle buttons in labelled `role="group"`s, built once per language by `buildOpts()`. Clicks update them in place; rebuilding on click drops keyboard focus.
+- **The heatmap grid is `aria-hidden`**; screen readers get the same months from the visually hidden `#hmTbl`. Keep both in `renderHeatmap()`. The table sits in a `.sr` wrapper because a table won't shrink to 1 px and would widen the page. `indicators.js`/`app.js` stay plain scripts at the end of `<body>` so the saved theme applies as early as possible — deferring them adds a wrong-theme flash for users with a manual theme.
 - **Lighthouse**: run it in an Incognito window. Extensions inject scripts that show up as unused JS, long tasks and console errors that aren't ours. GitHub Pages' 10-minute cache headers can't be changed — the service worker covers repeat visits.
