@@ -18,7 +18,7 @@ const T={
   inval:w=>`ราคาปิดต่ำกว่าค่าเฉลี่ย 200 สัปดาห์ ($${w}) ต่อเนื่อง หรือ MVRV Z-Score ขึ้นไปเกิน 7 (ระดับที่เคยเป็นยอดรอบ)`,
   disc:"ข้อมูลประกอบการตัดสินใจ ไม่ใช่คำแนะนำการลงทุน",
   priceLive:(n,src)=>`<span class="dot"></span>ราคาสด ${n} · ${src}`, priceOff:"ดึงราคาสดไม่ได้ แสดงราคาปิดล่าสุดแทน", d24:"24 ชม.",
-  onchain:(d,days)=>`ข้อมูล on-chain ถึง ${d} · ${days<=1?"วันนี้":days+" วันก่อน"}`, stale:` <span class="stale">⚠ เก่ากว่าปกติ</span>`,
+  onchain:(d,days)=>`ข้อมูล on-chain ถึง ${d} · ${days<=1?"วันนี้":days+" วันก่อน"}`, stale:` <span class="stale">⚠\uFE0E เก่ากว่าปกติ</span>`,
   hz:["1 เดือน","3 เดือน","6 เดือน","1 ปี"],
   btHead:(z,m,h,n,w)=>`วันที่อยู่ระดับ${z}แบบวันนี้ อีก ${h}ต่อมาราคาเปลี่ยนไป <b>${m}</b> (ค่ากลาง) <span>จาก ${n} วัน · ราคาขึ้น ${w}% ของครั้ง</span>`,
   btWin:(w,n)=>`ขึ้น ${w}% · ${n} วัน`, btThin:n=>`ข้อมูลน้อย · ${n} วัน`, btThinNow:"ระดับนี้ข้อมูลยังน้อย อย่าเพิ่งเชื่อตัวเลขนี้มาก", btN0:"ไม่มีข้อมูล",
@@ -44,7 +44,7 @@ const T={
   secCyc:"ตอนนี้คล้ายช่วงไหนในอดีต", cycCols:["ช่วงที่คล้าย","คล้าย","อีก 90 วัน","อีก 1 ปี"],
   cycNote:"เทียบรูปร่างและระดับของคะแนน 90 วันล่าสุดกับทุกช่วงในอดีต (ไม่นับปีล่าสุด) · คล้ายกันไม่ได้แปลว่าราคาจะเดินซ้ำ",
   secHm:"คะแนนรายเดือน · แต่ละช่องคือระดับเฉลี่ยของเดือนนั้น",
-  hvL:"เดือนที่เกิด halving (รางวัลการขุดลดลงครึ่งหนึ่ง)", year:"ปี",
+  hvL:"เดือนที่เกิด halving (รางวัลการขุดลดลงครึ่งหนึ่ง)", hvShort:"halving", year:"ปี",
   grp:["เลือกกราฟ","ช่วงเวลาของกราฟ","ดูราคาหลังจากนั้น","ปีที่เริ่มจำลอง"], sumBtc:"ราคา BTC", chartFail:"โหลดกราฟไม่สำเร็จ สรุปข้อมูลแทน: ",
   chartSum:(n,d0,d1,v0,v1,lo,dlo,hi,dhi)=>`${n} ${d0} ถึง ${d1}: เริ่ม ${v0} ล่าสุด ${v1} · ต่ำสุด ${lo} (${dlo}) · สูงสุด ${hi} (${dhi})`,
   info:t=>`เกี่ยวกับ ${t}`, weight:w=>`นับน้ำหนัก ${w} เท่าในคะแนนรวม`,
@@ -64,7 +64,7 @@ const T={
   inval:w=>`Price keeps closing below its 200-week average ($${w}), or MVRV Z-Score climbs above 7 (where past cycles topped)`,
   disc:"Context for your own decision, not financial advice.",
   priceLive:(n,src)=>`<span class="dot"></span>Live price ${n} · ${src}`, priceOff:"Live price unavailable, showing the last close", d24:"24h",
-  onchain:(d,days)=>`On-chain data to ${d} · ${days<=1?"today":days+" days ago"}`, stale:` <span class="stale">⚠ older than usual</span>`,
+  onchain:(d,days)=>`On-chain data to ${d} · ${days<=1?"today":days+" days ago"}`, stale:` <span class="stale">⚠\uFE0E older than usual</span>`,
   hz:["1 month","3 months","6 months","1 year"],
   btHead:(z,m,h,n,w)=>`On past ${z} days like today, price ${h} later moved <b>${m}</b> (median) <span>across ${n} days · up ${w}% of the time</span>`,
   btWin:(w,n)=>`up ${w}% · ${n} days`, btThin:n=>`thin data · ${n} days`, btThinNow:"thin data at this level, treat with caution", btN0:"no data",
@@ -90,7 +90,7 @@ const T={
   secCyc:"Past periods most like now", cycCols:["Similar period","Match","90 days later","1 year later"],
   cycNote:"Compares the shape and level of the last 90 days of the score with every past period (excluding the latest year) · similar doesn't mean price will repeat",
   secHm:"Monthly score · each cell is that month's average level",
-  hvL:"Halving month (the mining reward is cut in half)", year:"Year",
+  hvL:"Halving month (the mining reward is cut in half)", hvShort:"Halving", year:"Year",
   grp:["Chart","Chart range","Price change after","Simulation start"], sumBtc:"BTC price", chartFail:"The chart couldn't load. In short: ",
   chartSum:(n,d0,d1,v0,v1,lo,dlo,hi,dhi)=>`${n} from ${d0} to ${d1}: started at ${v0}, latest ${v1} · low ${lo} (${dlo}) · high ${hi} (${dhi})`,
   info:t=>`About ${t}`, weight:w=>`Counts ${w}× in the overall score`,
@@ -104,17 +104,18 @@ const SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wid
 const MOON='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
 const DARK=()=>document.documentElement.classList.contains("dk")?true:document.documentElement.classList.contains("lt")?false:matchMedia("(prefers-color-scheme: dark)").matches;
 function applyTheme(mode){const r=document.documentElement;r.classList.remove("dk","lt");if(mode==="dark")r.classList.add("dk");else if(mode==="light")r.classList.add("lt");
+  // the browser bar follows a chosen theme too: the metas' media queries only know the OS setting
+  for(const m of document.querySelectorAll('meta[name="theme-color"]'))m.content=mode==="auto"?m.dataset.c:tok("bg");
   themeBtnSync();}
 function themeBtnSync(){const b=document.getElementById("themeBtn");b.innerHTML=DARK()?SUN:MOON;b.setAttribute("aria-label",DARK()?L().themeToLight:L().themeToDark);}
 function toggleTheme(){const next=DARK()?"light":"dark";localStorage.setItem("theme",next);applyTheme(next);if(COMP&&SNAP)render(lastT);}
 
-/* ---------- colors ---------- */
-const ZHEX={good:["#1c7a47","#75c59b"],ok:["#5a7711","#abca84"],neutral:["#926500","#dbb970"],warn:["#ae5318","#dc9a6c"],bad:["#bb2f24","#de857e"]}; // [light, dark]: mirror the CSS --z-* tokens
+/* ---------- colors: the CSS tokens are the only source. Canvas reads them at draw time, markup uses var() ---------- */
+const tok=n=>getComputedStyle(document.documentElement).getPropertyValue("--"+n).trim();
 const band=s=>s>=75?"good":s>=55?"ok":s>=40?"neutral":s>=25?"warn":"bad";
-const hx=k=>ZHEX[k][DARK()?1:0];
 const scoreVar=s=>`var(--z-${band(s)})`;
-const inkHex=()=>DARK()?"#e9e7e1":"#171715";
-const btcHex=()=>DARK()?"#f7931a":"#c96b08";
+const usd=v=>"$"+Math.round(v).toLocaleString("en-US");
+const neg=s=>String(s).replace(/^-/,"−"); // a true minus sign, like every other figure on the page
 const nuplPhase=v=>L().nuplPh[v<0?0:v<0.25?1:v<0.5?2:v<0.75?3:4];
 /* escape any data-sourced string before it enters innerHTML (defense-in-depth vs upstream tampering) */
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -160,7 +161,7 @@ async function load(full){
     if(full||!RAW)await getRaw();
     await recompute(tp);
     lastErr=null;document.getElementById("err").hidden=true;
-    const l=L();announce(l.ready(Math.round(SNAP.overall),l.zone[SNAP.label],"$"+Math.round(SNAP.price).toLocaleString("en-US"))+(lastT?"":" "+l.priceOff));
+    const l=L();announce(l.ready(Math.round(SNAP.overall),l.zone[SNAP.label],usd(SNAP.price))+(lastT?"":" "+l.priceOff));
   }catch(e){lastErr=e;showErr(await tp);}
   finally{busy=false;btns.forEach(b=>b.setAttribute("aria-disabled","false"));}
 }
@@ -191,8 +192,8 @@ function spark(key,bands){
   const pad=(hi-lo)*.1||1;lo-=pad;hi+=pad;
   const X=i=>((i-xs[0])/(xs[xs.length-1]-xs[0]))*W,Y=v=>H-((v-lo)/(hi-lo))*H;
   let d="M"+X(xs[0]).toFixed(1)+" "+Y(ys[0]).toFixed(1);for(let i=1;i<ys.length;i++)d+=" L"+X(xs[i]).toFixed(1)+" "+Y(ys[i]).toFixed(1);
-  let bl="";for(const b of bands){const y=Y(b.y).toFixed(1);bl+=`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="${b.color}" stroke-width="1" stroke-dasharray="2 3" opacity=".55"/>`;}
-  return`<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${bl}<path d="${d}" fill="none" stroke="${inkHex()}" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+  let bl="";for(const b of bands){const y=Y(b.y).toFixed(1);bl+=`<line x1="0" y1="${y}" x2="${W}" y2="${y}" style="stroke:var(--z-${b.z})" stroke-width="1" stroke-dasharray="2 3" opacity=".55"/>`;}
+  return`<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${bl}<path d="${d}" fill="none" style="stroke:var(--ink)" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
 }
 
 /* section heading: "Title · subtitle" -> <h2>Title<small>subtitle</small></h2> */
@@ -247,7 +248,7 @@ function render(t){
   const sm=document.getElementById("s-mom");sm.textContent=l.trend(up,belowW);sm.style.color=riskKey==="low"?"var(--z-good)":riskKey==="med"?"var(--z-neutral)":"var(--z-bad)";
   // realized price + NUPL (baked into data.json by the daily Action; shown only if present)
   const rpW=document.getElementById("s-rp-wrap"),nuW=document.getElementById("s-nupl-wrap");
-  if(FRESH&&Number.isFinite(FRESH.realizedPrice)){document.getElementById("s-rp").textContent="$"+Math.round(FRESH.realizedPrice).toLocaleString("en-US");rpW.hidden=false;}else rpW.hidden=true;
+  if(FRESH&&Number.isFinite(FRESH.realizedPrice)){document.getElementById("s-rp").textContent=usd(FRESH.realizedPrice);rpW.hidden=false;}else rpW.hidden=true;
   const nupl=FRESH&&Number.isFinite(FRESH.realizedPrice)?1-FRESH.realizedPrice/SNAP.price:FRESH&&FRESH.nupl; // NUPL = 1 − realized/market, at the live price
   if(Number.isFinite(nupl)){document.getElementById("s-nupl").textContent=nupl.toFixed(2)+" · "+nuplPhase(nupl);nuW.hidden=false;}else nuW.hidden=true;
   // one action line: the score sets how much, a weak short-term trend says spread it out
@@ -270,8 +271,8 @@ function renderRows(){
   Indicators.INDICES.forEach(s=>{
     const v=SNAP?SNAP.values[s.key]:NaN,score=SNAP?SNAP.scores[s.key]:NaN,c=SNAP?`style="color:var(--z-${band(score)})"`:"";
     const el=document.createElement("div");el.className="row";
-    el.innerHTML=`<div class="nm">${s.title}</div><div class="val">${SNAP?s.fmt(v):"–"}</div>
-      <div class="meta"><span class="tier ${s.tier}" title="${l.weight(s.weight)}">×${s.weight}</span><span class="st" ${c}>${SNAP?l.status[s.key](v):"&nbsp;"}</span><button class="i" aria-label="${l.info(s.title)}" aria-expanded="false">ⓘ</button></div>
+    el.innerHTML=`<div class="nm">${s.title}</div><div class="val">${SNAP?neg(s.fmt(v)):"–"}</div>
+      <div class="meta"><span class="tier ${s.tier}" title="${l.weight(s.weight)}">×${s.weight}</span><span class="st">${SNAP?l.status[s.key](v):"&nbsp;"}</span><button class="i" aria-label="${l.info(s.title)}" aria-expanded="false">ⓘ</button></div>
       <div class="sparkwrap">${SNAP?spark(s.key,s.bands):'<svg class="spark" aria-hidden="true"></svg>'}<span class="sc"><b ${c}>${SNAP?score.toFixed(0):"–"}</b>/100</span></div>
       <div class="info">${l.metric[s.key]||""}<span class="rd">${(l.read&&l.read[s.key])||""}</span></div>`;
     el.querySelector(".i").onclick=function(){this.setAttribute("aria-expanded",el.classList.toggle("open"));};
@@ -281,8 +282,8 @@ function renderRows(){
 /* price, 24h change and the first "as of" line; px is the last close when there's no live price */
 function renderPrice(t,px){
   const l=L(),chg=document.getElementById("chg");
-  document.getElementById("price").textContent="$"+Math.round(px).toLocaleString("en-US");
-  if(t&&Number.isFinite(t.chg)){chg.className="chg "+(t.chg>=0?"up":"down");chg.textContent=(t.chg>=0?"+":"−")+Math.abs(t.chg).toFixed(2)+"% "+l.d24;}else chg.textContent="";
+  document.getElementById("price").textContent=usd(px);
+  if(t&&Number.isFinite(t.chg)){chg.textContent=(t.chg>=0?"+":"−")+Math.abs(t.chg).toFixed(2)+"% "+l.d24;}else chg.textContent="";
   return t?l.priceLive(new Date().toLocaleTimeString(LANG==="th"?"th-TH":"en-GB",{hour:"2-digit",minute:"2-digit"}),t.src):l.priceOff;
 }
 
@@ -309,8 +310,7 @@ function renderDca(){
   if(!r){document.getElementById("dcaHead").textContent=l.noData;document.getElementById("dcaGrid").innerHTML="";return;}
   const startLbl=curDcaStart?curDcaStart.slice(0,4):l.allStart;
   document.getElementById("dcaHead").innerHTML=l.dcaHead(r.edge*100,startLbl);
-  const money=v=>"$"+Math.round(v).toLocaleString("en-US");
-  document.getElementById("dcaGrid").innerHTML=tbl(l.dcaCols,[[l.dcaSig,money(r.invS),r.btcS.toFixed(4),`<span class="win">${money(r.costS)}</span>`],[l.dcaFlat,money(r.invF),r.btcF.toFixed(4),money(r.costF)]]);
+  document.getElementById("dcaGrid").innerHTML=tbl(l.dcaCols,[[l.dcaSig,usd(r.invS),r.btcS.toFixed(4),`<span class="win">${usd(r.costS)}</span>`],[l.dcaFlat,usd(r.invF),r.btcF.toFixed(4),usd(r.costF)]]);
 }
 
 /* ---- cycle compare ---- */
@@ -360,26 +360,26 @@ function renderBacktest(){
     el.innerHTML=`<span class="z" style="color:var(--z-${k})">${l.zone[b.zone]}</span><span class="m" style="color:${weak?"var(--muted)":b.median>=0?"var(--z-good)":"var(--z-bad)"}">${b.n?pct(b.median):"–"}</span><span class="w">${!b.n?l.btN0:thin(b)?l.btThin(b.n):l.btWin(Math.round(b.win*100),b.n)}</span>`;
     box.appendChild(el);});
 }
-/* vertical dashed line + year label at each halving (price/score tabs) */
+/* vertical dashed line + year at each halving (price/score tabs); a legend entry says what the line is */
 const chartPx=()=>Math.round(remPx()*.75); // 12px at the default size
 const halvingPlugin={id:"hv",afterDatasetsDraw(ch){
   const xs=ch.scales.x,labels=ch.data.labels;if(!xs||!labels||!labels.length)return;
-  const ctx=ch.ctx,faint=DARK()?"#6c6960":"#a9a9a2";ctx.save();
+  const ctx=ch.ctx,faint=tok("faint"),px=chartPx();ctx.save();
   for(const d of HALVINGS){
     if(d<labels[0]||d>labels[labels.length-1])continue;
     let lo=0,hi=labels.length-1;while(lo<hi){const mid=(lo+hi)>>1;if(labels[mid]<d)lo=mid+1;else hi=mid;}
     const x=xs.getPixelForValue(lo);
     ctx.strokeStyle=faint;ctx.lineWidth=1;ctx.setLineDash([3,4]);
     ctx.beginPath();ctx.moveTo(x,ch.chartArea.top);ctx.lineTo(x,ch.chartArea.bottom);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle=faint;ctx.font=chartPx()+"px Anuphan";ctx.fillText("⛏"+d.slice(2,4),x+3,ch.chartArea.top+10);
+    ctx.fillStyle=faint;ctx.font=px+"px Anuphan";ctx.fillText(d.slice(0,4),x+3,ch.chartArea.top+px);
   }
   ctx.restore();
 }};
 
 /* the chart in words (canvas aria-label, and the fallback text if Chart.js fails): range, first/last, low/high */
 function chartSum(start){
-  const l=L(),s=Indicators.INDICES.find(x=>x.key===curKey),money=v=>"$"+Math.round(v).toLocaleString("en-US");
-  const [nm,a,f]=curKey==="price"?[l.sumBtc,COMP.price,money]:curKey==="score"?[l.tabScore,SCORES,Math.round]:[s.title,COMP[curKey],s.fmt];
+  const l=L(),s=Indicators.INDICES.find(x=>x.key===curKey);
+  const [nm,a,f]=curKey==="price"?[l.sumBtc,COMP.price,usd]:curKey==="score"?[l.tabScore,SCORES,Math.round]:[s.title,COMP[curKey],v=>neg(s.fmt(v))];
   let i0=-1,i1=-1,lo=-1,hi=-1;
   for(let i=start;i<a.length;i++){if(!Number.isFinite(a[i]))continue;if(i0<0)i0=lo=hi=i;i1=i;if(a[i]<a[lo])lo=i;if(a[i]>a[hi])hi=i;}
   const d=COMP.date;return i0<0?nm:l.chartSum(nm,d[i0],d[i1],f(a[i0]),f(a[i1]),f(a[lo]),d[lo],f(a[hi]),d[hi]);
@@ -389,22 +389,29 @@ function drawChart(){
   document.getElementById("chart").setAttribute("aria-label",sum);
   // Chart.js is deferred: its load event redraws; if it fails (CDN down, blocked) the page says so and keeps the summary
   if(!window.Chart){if(CHART_FAIL){fb.textContent=L().chartFail+sum;fb.hidden=false;}return;}
-  const labels=COMP.date.slice(start),ink=inkHex(),px=chartPx();
-  const grid={color:DARK()?"rgba(255,255,255,.07)":"rgba(20,20,16,.07)"},ticks={color:DARK()?"#85827b":"#6e6e69",font:{size:px,family:"Anuphan"},maxTicksLimit:5};
-  const mk=(la,arr,color,w=1.8,dash=null)=>({label:la,data:arr.slice(start),borderColor:color,borderWidth:w,borderDash:dash||[],pointRadius:0,tension:.2,spanGaps:true,fill:false});
-  let datasets=[],logY=false;const lg=L().lg;
-  if(curKey==="price"){logY=true;datasets=[mk(lg.btc,COMP.price,ink,2),mk(lg.w200,COMP.ma200w,btcHex(),1.6),mk(lg.d200,COMP.ma200,DARK()?"#6c6960":"#a9a9a2",1,[4,4])];
+  const labels=COMP.date.slice(start),ink=tok("ink"),faint=tok("faint"),px=chartPx(),l=L(),lg=l.lg,hv=curKey==="price"||curKey==="score";
+  const grid={color:tok("line-soft")},ticks={color:faint,font:{size:px,family:"Anuphan"},maxTicksLimit:5};
+  const mk=(la,arr,color,w=1.8,dash=[])=>({label:la,data:arr.slice(start),borderColor:color,borderWidth:w,borderDash:dash,pointRadius:0,tension:.2,spanGaps:true,fill:false});
+  // reference lines (thresholds, the halving key): drawn and listed in the legend, left out of the tooltip
+  const ref=(la,y,color,dash=[5,4])=>({label:la,data:y===null?[]:labels.map(()=>y),borderColor:color,borderWidth:1,borderDash:dash,pointRadius:0,fill:false,ref:true});
+  let datasets=[],logY=false,f=usd; // f: how this tab's values read in the tooltip
+  if(curKey==="price"){logY=true;datasets=[{...mk(lg.btc,COMP.price,ink,2),tip:"BTC"},mk(lg.w200,COMP.ma200w,tok("btc"),1.6),mk(lg.d200,COMP.ma200,faint,1,[4,4])];
     // very cheap days: the price line itself turns the "good" color instead of a separate dot series
-    datasets[0].segment={borderColor:c=>SCORES[start+c.p1DataIndex]>=75?hx("good"):undefined};
-    if(FRESH&&Number.isFinite(FRESH.realizedPrice))datasets.push({label:lg.rp,data:labels.map(()=>FRESH.realizedPrice),borderColor:DARK()?"#9b988f":"#9a6a00",borderWidth:1,borderDash:[2,3],pointRadius:0,fill:false});}
-  else if(curKey==="score"){datasets=[mk(lg.score,SCORES,ink,2)];[[75,hx("good")],[55,hx("ok")],[40,hx("neutral")],[25,hx("warn")]].forEach(([y,c])=>datasets.push({label:String(y),data:labels.map(()=>y),borderColor:c,borderWidth:1,borderDash:[5,4],pointRadius:0,fill:false}));}
-  else if(curKey==="pi_ratio"){logY=true;datasets=[mk(lg.ma111,COMP.ma111,ink,1.8),mk(lg.ma350,COMP.ma350x2,hx("bad"),1.6)];}
-  else{const s=Indicators.INDICES.find(x=>x.key===curKey);datasets=[mk(s.title,COMP[curKey],ink,2)];s.bands.forEach(b=>datasets.push({label:b.label,data:labels.map(()=>b.y),borderColor:b.color,borderWidth:1,borderDash:[5,4],pointRadius:0,fill:false}));}
+    const good=tok("z-good");datasets[0].segment={borderColor:c=>SCORES[start+c.p1DataIndex]>=75?good:undefined};
+    if(FRESH&&Number.isFinite(FRESH.realizedPrice))datasets.push(mk(lg.rp,COMP.date.map(()=>FRESH.realizedPrice),tok("muted"),1,[2,3])); /* full length: mk() slices */}
+  else if(curKey==="score"){f=Math.round;datasets=[mk(lg.score,SCORES,ink,2),...[[75,"good"],[55,"ok"],[40,"neutral"],[25,"warn"]].map(([y,k])=>ref(String(y),y,tok("z-"+k)))];}
+  else if(curKey==="pi_ratio"){logY=true;datasets=[mk(lg.ma111,COMP.ma111,ink,1.8),mk(lg.ma350,COMP.ma350x2,tok("z-bad"),1.6)];}
+  else{const s=Indicators.INDICES.find(x=>x.key===curKey);f=v=>neg(s.fmt(v));datasets=[mk(s.title,COMP[curKey],ink,2),...s.bands.map(b=>ref(b.label,b.y,tok("z-"+b.z)))];}
+  if(hv)datasets.push(ref(l.hvShort,null,faint,[3,4]));
   if(chart)chart.destroy();
   chart=new Chart(document.getElementById("chart"),{type:"line",data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,animation:false /* per-point animations made each draw ~15x slower (TBT/INP) */,interaction:{mode:"index",intersect:false},
-    plugins:{legend:{display:datasets.length>1,labels:{color:DARK()?"#9b988f":"#5f5f5a",font:{size:px,family:"Anuphan"},boxWidth:14,boxHeight:1,usePointStyle:false}},tooltip:{backgroundColor:DARK()?"#16181c":"#171715",titleColor:"#fafaf8",bodyColor:"#d8d8d2",borderColor:DARK()?"rgba(255,255,255,.12)":"transparent",borderWidth:1,cornerRadius:0,padding:9,titleFont:{family:"Anuphan",size:px+1},bodyFont:{family:"Anuphan",size:px+1},displayColors:false}},
-    scales:{x:{grid,ticks:{...ticks,maxTicksLimit:4,callback(v){return String(this.getLabelForValue(v)).slice(0,7);}} /* YYYY-MM: full dates collide on phones */,border:{color:DARK()?"rgba(255,255,255,.13)":"rgba(20,20,16,.14)"}},y:{type:logY?"logarithmic":"linear",grid,ticks,position:"right",border:{display:false}}}},
-    plugins:(curKey==="price"||curKey==="score")?[halvingPlugin]:[]});
+    plugins:{legend:{display:datasets.length>1,labels:{color:tok("muted"),font:{size:px,family:"Anuphan"},boxWidth:14,boxHeight:1,usePointStyle:false}},
+      // light: an ink tooltip; dark: a raised surface with a hairline
+      tooltip:{backgroundColor:tok(DARK()?"surface":"ink"),titleColor:tok(DARK()?"ink":"bg"),bodyColor:tok(DARK()?"ink":"bg"),borderColor:tok("line"),borderWidth:DARK()?1:0,cornerRadius:0,padding:9,titleFont:{family:"Anuphan",size:px+1},bodyFont:{family:"Anuphan",size:px+1},displayColors:false,
+        filter:c=>!c.dataset.ref,callbacks:{label:c=>`${c.dataset.tip||c.dataset.label} ${f(c.parsed.y)}`}}},
+    scales:{x:{grid,ticks:{...ticks,maxTicksLimit:4,callback(v){return String(this.getLabelForValue(v)).slice(0,7);}} /* YYYY-MM: full dates collide on phones */,border:{color:tok("line")}},
+      y:{type:logY?"logarithmic":"linear",grid,ticks:logY?ticks:{...ticks,callback(v,i,t){return neg(Chart.Ticks.formatters.numeric.call(this,v,i,t));}},position:"right",border:{display:false}}}},
+    plugins:hv?[halvingPlugin]:[]});
 }
 
 /* ---------- init ---------- */

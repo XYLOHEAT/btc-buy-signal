@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Free Bitcoin accumulation dashboard: Ahr999, MVRV Z-Score, 200W MA, Pi Cycle, Mayer and Puell combined into one 0–100 score, with backtest and DCA simulator.">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self' https://api.binance.com https://api.coingecko.com https://raw.githubusercontent.com; base-uri 'self'; object-src 'none'">
-<meta name="theme-color" content="#f3f3f0" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0e0f12" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f3f3f0" data-c="#f3f3f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e0f12" data-c="#0e0f12" media="(prefers-color-scheme: dark)">
 <title>Bitcoin Accumulation Signal</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23171715'/%3E%3Ccircle cx='50' cy='50' r='29' fill='none' stroke='%233a3b3f' stroke-width='9'/%3E%3Ccircle cx='50' cy='50' r='29' fill='none' stroke='%23f7931a' stroke-width='9' stroke-dasharray='136.7 182.2' transform='rotate(-90 50 50)'/%3E%3C/svg%3E">
 <link rel="manifest" href="manifest.webmanifest">
@@ -88,7 +88,7 @@ h1,h2{text-wrap:balance}
 .zone-th{color:var(--muted);margin-top:var(--space-xs);text-wrap:balance}
 .tape{font-weight:600;margin-top:var(--space-md);display:flex;align-items:center;justify-content:center;gap:var(--space-md);flex-wrap:wrap}
 .tape .dot{width:7px;height:7px;border-radius:50%;background:var(--z-good);display:inline-block;margin-right:var(--space-xs)}
-.tape .chg.up{color:var(--z-good)} .tape .chg.down{color:var(--z-bad)}
+.tape .chg{color:var(--muted)} /* the sign says the direction; red/green for a day's move is trading-app noise */
 .asof{font-size:var(--text-caption);color:var(--faint);margin-top:var(--space-sm);line-height:1.55}
 .asof .stale{color:var(--z-warn);font-weight:600}
 
@@ -119,10 +119,11 @@ h1,h2{text-wrap:balance}
 /* 44px target around a small glyph; negative margins keep the line height */
 .row .i{margin:-12px -12px -12px auto;width:44px;height:44px;display:grid;place-items:center;line-height:1;color:var(--faint);background:none;border:none;cursor:pointer}
 .row.open .i{color:var(--ink)}
+.row .i:focus-visible{outline-offset:-6px} /* ring inside the 44px target, clear of the value above */
 .row .sparkwrap{grid-area:spark;display:flex;align-items:center;gap:var(--space-md);margin-top:var(--space-sm)}
 .row .spark{flex:1;height:28px;display:block}
 .row .sc{font-size:var(--text-ui);font-weight:600;color:var(--faint);min-width:52px;text-align:right}
-.row .info{grid-area:info;display:none;font-size:var(--text-ui);color:var(--muted);line-height:1.6;margin-top:var(--space-sm);background:var(--surface);padding:var(--space-md);border:1px solid var(--line-soft)}
+.row .info{grid-area:info;display:none;font-size:var(--text-ui);color:var(--muted);line-height:1.6;text-wrap:pretty;margin-top:var(--space-sm);background:var(--surface);padding:var(--space-md);border:1px solid var(--line-soft)}
 .row.open .info{display:block}
 .row .info .rd{display:block;margin-top:var(--space-sm);padding-top:var(--space-sm);border-top:1px dashed var(--line-soft);font-size:var(--text-caption);color:var(--faint)}
 
@@ -152,17 +153,17 @@ h1,h2{text-wrap:balance}
 .bt-row .m{font-weight:700;font-size:var(--text-body);text-align:right}
 .bt-row.thin .m{font-weight:600} /* too few non-overlapping periods: shown, not emphasised */
 .bt-row .w{font-size:var(--text-caption);color:var(--muted);text-align:right;min-width:74px}
-.bt-note{font-size:var(--text-caption);color:var(--faint);margin-top:var(--space-md);line-height:1.6;max-width:65ch}
+.bt-note{font-size:var(--text-caption);color:var(--faint);margin-top:var(--space-md);line-height:1.6;max-width:65ch;text-wrap:pretty}
 details.method{margin-top:var(--space-xs)}
 details.method summary{cursor:pointer;font-size:var(--text-ui);color:var(--muted);padding:var(--space-md) 0;width:fit-content}
 details.method .bt-note{margin-top:0}
 
 /* data tables: DCA simulator and similar periods share one grid */
-.tbl{display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr));column-gap:var(--space-md);border-top:1px solid var(--line);font-size:var(--text-ui)}
+.tbl{display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr));border-top:1px solid var(--line);font-size:var(--text-ui)}
 .tbl>div{padding:var(--space-md) 0;border-bottom:1px solid var(--line-soft)}
 .tbl .h{font-size:var(--text-caption);font-weight:600;color:var(--muted)}
 .tbl .r{font-weight:600}
-.tbl .num{text-align:right;font-weight:600}
+.tbl .num{text-align:right;font-weight:600;padding-left:var(--space-md)} /* spacing inside the cells, so row rules run unbroken */
 .tbl .win{color:var(--z-good)}
 .tbl .empty{grid-column:1/-1;font-weight:400;color:var(--muted)}
 /* 17rem = the four-column tables' min-content with room for bigger totals. Below it each row stacks:
@@ -170,7 +171,7 @@ details.method .bt-note{margin-top:0}
 @container colb (max-width:17rem){
   .tbl{grid-template-columns:minmax(0,1fr)}
   .tbl .r{padding-bottom:0;border-bottom:0}
-  .tbl .num{display:flex;justify-content:space-between;gap:var(--space-md)}
+  .tbl .num{display:flex;justify-content:space-between;gap:var(--space-md);padding-left:0}
   .tbl .num::before{content:attr(data-l);font-weight:400;color:var(--muted);text-align:left}
   .tbl .h{display:none} /* after .num: header cells carry both classes */
 }
@@ -188,7 +189,7 @@ details.method .bt-note{margin-top:0}
 .hm-key{--c:.9375rem} .hm-key i{position:relative;flex:0 0 auto;width:var(--c);height:var(--c);border-radius:1px} /* swatch = cell size */
 @container colb (max-width:16rem){.hm .mh:not(:nth-child(3n+2)){visibility:hidden}} /* 12 month numbers don't fit: label quarters (1 4 7 10) */
 
-.foot{margin-top:var(--space-3xl);padding-top:var(--space-lg);border-top:1px solid var(--line);font-size:var(--text-caption);line-height:1.7;color:var(--muted)}
+.foot{margin-top:var(--space-3xl);padding-top:var(--space-lg);border-top:1px solid var(--line);font-size:var(--text-caption);line-height:1.7;color:var(--muted);text-wrap:pretty}
 .foot a{color:var(--muted);text-decoration:underline;text-underline-offset:2px}
 
 /* loading: the shell shows at once and each empty data slot holds its measured size, so nothing jumps when
@@ -220,7 +221,7 @@ details.method .bt-note{margin-top:0}
 .nojs{max-width:28.75rem;margin:var(--space-3xl) auto;padding:0 var(--space-lg);color:var(--muted)}
 @media (prefers-reduced-motion: reduce){.gauge .arc,body{transition:none}.is-loading :is(.sk:empty,.chart-box,.row .spark){animation:none}}
 @media (max-width:22.5em){.gauge{width:min(10.75rem,100%)}.mast h1{font-size:1.125rem}}
-@media (hover:hover){.cbtn:hover{border-color:var(--ink)} :is(.tabs,.ranges,.bt-h) button:hover,details.method summary:hover{color:var(--ink)}}
+@media (hover:hover){.cbtn:hover{border-color:var(--ink)} :is(.tabs,.ranges,.bt-h) button:hover,details.method summary:hover,.row .i:hover,.foot a:hover{color:var(--ink)}}
 
 /* index rows two-up once the column can hold two (tablet, wide desktop; not the 1024px desktop column) */
 @container colb (min-width:34rem){.rows{display:grid;grid-template-columns:1fr 1fr;column-gap:var(--space-3xl)}}
@@ -349,7 +350,7 @@ details.method .bt-note{margin-top:0}
 </div>
 
 <p class="sr" id="live" role="status"></p>
-<script src="indicators.js?v=6"></script>
-<script src="app.js?v=13"></script>
+<script src="indicators.js?v=7"></script>
+<script src="app.js?v=14"></script>
 </body>
 </html>

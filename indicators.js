@@ -154,51 +154,34 @@ const scoreWma = (x) => x <= 1 ? 100 : lin(x, 1, 3, 100, 0);
 const scorePuell = (p) => p <= 0.5 ? 100 : lin(p, 0.5, 4, 100, 0);
 const scorePi = (r) => lin(r, 0.6, 1.0, 100, 0);
 
-const ZONES = [
-  [75, "STRONG BUY", "ซื้อแรง", "#34d399"],
-  [55, "ACCUMULATE", "ทยอยสะสม / DCA", "#a3e635"],
-  [40, "NEUTRAL", "เป็นกลาง", "#fbbf24"],
-  [25, "CAUTION", "ระวัง", "#fb923c"],
-  [0, "EXPENSIVE", "แพง / โซนขาย", "#f87171"],
-];
+/* zone keys only: names and colors belong to the UI (app.js T.zone, CSS --z-*), ADR-014/016 */
+const ZONES = [[75, "STRONG BUY"], [55, "ACCUMULATE"], [40, "NEUTRAL"], [25, "CAUTION"], [0, "EXPENSIVE"]];
 function zoneOf(score) {
-  for (const z of ZONES) if (score >= z[0]) return { label: z[1], th: z[2], color: z[3] };
-  return { label: ZONES[ZONES.length - 1][1], th: "", color: "#f87171" };
+  for (const z of ZONES) if (score >= z[0]) return { label: z[1] };
+  return { label: "EXPENSIVE" };
 }
 
 /* ---------- declarative registry (single source of truth) ---------- */
 const f2 = (v) => v.toFixed(2);
 const INDICES = [
-  { key: "ahr999", title: "Ahr999", tier: "S", weight: 2, color: "#c084fc",
+  { key: "ahr999", title: "Ahr999", tier: "S", weight: 2,
     fmt: (v) => v.toFixed(3), score: scoreAhr,
-    status: (v) => v < 0.45 ? "ถูกมาก" : v <= 1.2 ? "DCA zone" : "แพง",
-    rule: "<0.45 ซื้อ · 0.45–1.2 DCA · >1.2 แพง",
-    bands: [{ y: 0.45, color: "#34d399", label: "0.45" }, { y: 1.2, color: "#f87171", label: "1.2" }] },
-  { key: "mvrv_z", title: "MVRV Z-Score", tier: "S", weight: 2, color: "#22d3ee",
+    bands: [{ y: 0.45, z: "good", label: "0.45" }, { y: 1.2, z: "bad", label: "1.2" }] },
+  { key: "mvrv_z", title: "MVRV Z-Score", tier: "S", weight: 2,
     fmt: f2, score: scoreMvrvZ,
-    status: (v) => v < 0.1 ? "bottom" : v < 5 ? "กลาง" : "top zone",
-    rule: "<0 bottom · >7 top",
-    bands: [{ y: 0.1, color: "#34d399", label: "bottom" }, { y: 7, color: "#f87171", label: "top" }] },
-  { key: "wma_mult", title: "200W MA Multiple", tier: "S", weight: 2, color: "#60a5fa",
+    bands: [{ y: 0.1, z: "good", label: "0.1" }, { y: 7, z: "bad", label: "7" }] },
+  { key: "wma_mult", title: "200W MA Multiple", tier: "S", weight: 2,
     fmt: (v) => v.toFixed(2) + "×", score: scoreWma,
-    status: (v) => v <= 1.05 ? "แตะ 200WMA!" : v < 3 ? "ปกติ" : "ร้อน",
-    rule: "≈1 = แตะ 200WMA (cycle bottom)",
-    bands: [{ y: 1, color: "#34d399", label: "200WMA" }] },
-  { key: "pi_ratio", title: "Pi Cycle Top", tier: "A", weight: 1, color: "#fbbf24",
+    bands: [{ y: 1, z: "good", label: "1.0×" }] },
+  { key: "pi_ratio", title: "Pi Cycle Top", tier: "A", weight: 1,
     fmt: f2, score: scorePi,
-    status: (v) => v < 0.7 ? "ไกล top" : v >= 0.95 ? "ใกล้ top!" : "กลาง",
-    rule: "111DMA ÷ 2×350DMA · ≥1 = top",
-    bands: [{ y: 1, color: "#f87171", label: "top trigger" }] },
-  { key: "mayer", title: "Mayer Multiple", tier: "A", weight: 1, color: "#34d399",
+    bands: [{ y: 1, z: "bad", label: "1.0" }] },
+  { key: "mayer", title: "Mayer Multiple", tier: "A", weight: 1,
     fmt: f2, score: scoreMayer,
-    status: (v) => v < 1 ? "ถูก" : v < 2.4 ? "ปกติ" : "ร้อน",
-    rule: "price ÷ 200DMA · <1 ถูก · >2.4 ร้อน",
-    bands: [{ y: 1, color: "#34d399", label: "1.0" }, { y: 2.4, color: "#f87171", label: "2.4" }] },
-  { key: "puell", title: "Puell Multiple", tier: "A", weight: 1, color: "#f0abfc",
+    bands: [{ y: 1, z: "good", label: "1.0" }, { y: 2.4, z: "bad", label: "2.4" }] },
+  { key: "puell", title: "Puell Multiple", tier: "A", weight: 1,
     fmt: f2, score: scorePuell,
-    status: (v) => v < 0.5 ? "miner bottom" : v < 4 ? "ปกติ" : "top",
-    rule: "<0.5 bottom · >4 top",
-    bands: [{ y: 0.5, color: "#34d399", label: "0.5" }, { y: 4, color: "#f87171", label: "4" }] },
+    bands: [{ y: 0.5, z: "good", label: "0.5" }, { y: 4, z: "bad", label: "4" }] },
 ];
 
 function snapshot(c) {
