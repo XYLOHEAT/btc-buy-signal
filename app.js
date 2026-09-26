@@ -6,15 +6,14 @@ let LANG=localStorage.getItem("lang")||"th";
 const T={
  th:{
   sub:"รวม 6 ดัชนีมูลค่าระยะยาวของ Bitcoin เป็นคะแนนเดียว",
-  priceL:"ราคา BTC", valL:"มูลค่าเทียบอดีต", momL:"แนวโน้มระยะสั้น",
+  momL:"แนวโน้มระยะสั้น", method:"วิธีคำนวณและข้อจำกัด",
   secIndex:"ดัชนีรายตัว · แต่ละตัวให้คะแนน 0–100 ตัวที่มี ×2 นับน้ำหนักสองเท่า", secCharts:"กราฟย้อนหลัง",
   secBt:"ผลย้อนหลังตามระดับราคา · ราคาเปลี่ยนไปเท่าไรหลังวันที่อยู่แต่ละระดับ",
   action:"แนวทาง", invalidLbl:"มุมมองนี้ผิดถ้า",
-  scale:["แพง","ค่อนข้างแพง","กลาง ๆ","ถูก","ถูกมาก"],
   zone:{"STRONG BUY":"ถูกมาก","ACCUMULATE":"ถูก","NEUTRAL":"กลาง ๆ","CAUTION":"ค่อนข้างแพง","EXPENSIVE":"แพง"},
   pctl:(p,y)=>`ถูกกว่า ${p}% ของวันตั้งแต่ปี ${y} ตามคะแนนนี้`, scoreAria:n=>`คะแนน ${n} จาก 100`,
-  mom:up=>up?"แข็ง: ราคาอยู่เหนือค่าเฉลี่ย 200 วัน":"อ่อน: ราคาอยู่ใต้ค่าเฉลี่ย 200 วัน",
-  what:(z,sc,up,bw)=>`ดัชนีทั้ง 6 ตัวรวมได้ ${sc}/100 ถือว่า${z}เมื่อเทียบกับอดีต ${up?"ราคายังยืนเหนือค่าเฉลี่ย 200 วัน":"ราคาอยู่ใต้ค่าเฉลี่ย 200 วัน"}${bw?" และต่ำกว่าค่าเฉลี่ย 200 สัปดาห์ แนวโน้มระยะยาวจึงยังไม่ยืนยัน":""}`,
+  trend:(up,bw)=>up&&!bw?"แข็ง · เหนือค่าเฉลี่ย 200 วัน":!bw?"อ่อน · ใต้ค่าเฉลี่ย 200 วัน":up?"ฟื้นระยะสั้น · ยังใต้ค่าเฉลี่ย 200 สัปดาห์":"อ่อน · ใต้ทั้งค่าเฉลี่ย 200 วันและ 200 สัปดาห์",
+  dcaWeak:" · แนวโน้มระยะสั้นยังอ่อน ค่อย ๆ ทยอยซื้อ",
   dca:s=>s>=75?"DCA มากกว่าปกติ 2–3 เท่า และเก็บเงินสดสำรองไว้เสมอ ไม่ทุ่มหมดครั้งเดียว":s>=55?"DCA มากกว่าปกติเล็กน้อย ราว 1.5–2 เท่า":s>=40?"DCA ตามแผนปกติ":s>=25?"DCA น้อยกว่าปกติ แล้วรอราคาที่ดีกว่า":"หยุดซื้อเพิ่มชั่วคราว และไม่กู้เงินมาลงทุน",
   inval:w=>`ราคาปิดต่ำกว่าค่าเฉลี่ย 200 สัปดาห์ ($${w}) ต่อเนื่อง หรือ MVRV Z-Score ขึ้นไปเกิน 7 (ระดับที่เคยเป็นยอดรอบ)`,
   disc:"ข้อมูลประกอบการตัดสินใจ ไม่ใช่คำแนะนำการลงทุน",
@@ -34,9 +33,6 @@ const T={
     mayer:"ราคาหารด้วยค่าเฉลี่ย 200 วัน ต่ำกว่า 1 คืออยู่ใต้ค่าเฉลี่ย (ถูก) เกิน 2.4 คือร้อนแรงเกิน",
     puell:"รายได้ต่อวันของนักขุดเทียบค่าเฉลี่ย 1 ปี ต่ำกว่า 0.5 คือรายได้ตกจนนักขุดต้องขายเหรียญ มักใกล้ก้นรอบ เกิน 4 คือกำไรสูงผิดปกติ มักใกล้ยอดรอบ"},
   read:{ahr999:"คะแนน: ≤0.45 ได้ 100 · 1.2 ได้ 50 · ≥4 ได้ 0",mvrv_z:"คะแนน: ≤0 ได้ 100 · ≥7 ได้ 0",wma_mult:"คะแนน: ≤1.0× ได้ 100 · ≥3× ได้ 0",pi_ratio:"คะแนน: ≤0.6 ได้ 100 · ≥1.0 ได้ 0",mayer:"คะแนน: ≤0.8 ได้ 100 · ≥2.4 ได้ 0",puell:"คะแนน: ≤0.5 ได้ 100 · ≥4 ได้ 0"},
-  valueL:"มูลค่า",riskL:"ความเสี่ยงระยะสั้น",actL:"ควรทำ",riskW:{low:"ต่ำ",med:"กลาง",high:"สูง"},
-  riskSub:(up,bw)=>(up?"เหนือค่าเฉลี่ย 200 วัน":"ใต้ค่าเฉลี่ย 200 วัน")+(bw?" · ใต้ 200 สัปดาห์":""),
-  act:{addStrong:"DCA มากขึ้น",dcaGrad:"ทยอย DCA",normal:"DCA ตามปกติ",hold:"ถือไว้ ชะลอซื้อ",reduce:"หยุดซื้อเพิ่ม"},
   rpL:"ต้นทุนเฉลี่ยตลาด (realized price)",nuplL:"อารมณ์ตลาด (NUPL)",nuplPh:["ยอมแพ้","หวังปนกลัว","มองบวก","มั่นใจ","คลั่งไคล้"],
   secDca:"จำลอง DCA · ถ้าปรับจำนวนซื้อตามคะแนนนี้",
   dcaHead:(e,st)=>`เริ่มปี ${st} ถ้าปรับจำนวนซื้อตามคะแนน ต้นทุนเฉลี่ยต่อ BTC จะ<b style="color:var(--z-${e>=0?"good":"bad"})">${e>=0?"ต่ำกว่า":"สูงกว่า"} ${Math.abs(e).toFixed(1)}%</b> เทียบกับซื้อเท่ากันทุกครั้ง`,
@@ -54,15 +50,14 @@ const T={
  },
  en:{
   sub:"Six long-term Bitcoin valuation indices, one score",
-  priceL:"BTC price", valL:"Valuation vs history", momL:"Short-term trend",
+  momL:"Short-term trend", method:"How it's calculated",
   secIndex:"Index breakdown · each scores 0–100; ×2 indices count double", secCharts:"History",
   secBt:"Backtest · how price moved after days at each level",
   action:"What to do", invalidLbl:"This view is wrong if",
-  scale:["Expensive","Pricey","Fair","Cheap","Very cheap"],
   zone:{"STRONG BUY":"Very cheap","ACCUMULATE":"Cheap","NEUTRAL":"Fair","CAUTION":"Pricey","EXPENSIVE":"Expensive"},
   pctl:(p,y)=>`By this score, cheaper than ${p}% of days since ${y}`, scoreAria:n=>`Score ${n} out of 100`,
-  mom:up=>up?"Strong: above the 200-day average":"Weak: below the 200-day average",
-  what:(z,sc,up,bw)=>`The six indices combine to ${sc}/100: ${z} compared with history. ${up?"Price is holding above its 200-day average":"Price is below its 200-day average"}${bw?", and below its 200-week average, so the long-term trend is not confirmed":""}.`,
+  trend:(up,bw)=>up&&!bw?"Strong · above 200-day avg":!bw?"Weak · below 200-day avg":up?"Recovering · still below 200-week avg":"Weak · below 200-day and 200-week avg",
+  dcaWeak:" · the short-term trend is weak, so spread buys over time",
   dca:s=>s>=75?"DCA 2–3× your usual amount, and always keep some cash in reserve instead of going all in":s>=55?"DCA a little more than usual, about 1.5–2×":s>=40?"DCA your usual amount":s>=25?"DCA less than usual and wait for better prices":"Pause new buys, and don't borrow to invest",
   inval:w=>`Price keeps closing below its 200-week average ($${w}), or MVRV Z-Score climbs above 7 (where past cycles topped)`,
   disc:"Context for your own decision, not financial advice.",
@@ -82,9 +77,6 @@ const T={
     mayer:"Price divided by the 200-day average. Below 1 is under the average (cheap); above 2.4 is overheated.",
     puell:"Miners' daily revenue against its 1-year average. Below 0.5, revenue has collapsed and miners sell, usually near a cycle low. Above 4, profits are unusually high, usually near a top."},
   read:{ahr999:"Score: ≤0.45 gets 100 · 1.2 gets 50 · ≥4 gets 0",mvrv_z:"Score: ≤0 gets 100 · ≥7 gets 0",wma_mult:"Score: ≤1.0× gets 100 · ≥3× gets 0",pi_ratio:"Score: ≤0.6 gets 100 · ≥1.0 gets 0",mayer:"Score: ≤0.8 gets 100 · ≥2.4 gets 0",puell:"Score: ≤0.5 gets 100 · ≥4 gets 0"},
-  valueL:"Value",riskL:"Short-term risk",actL:"What to do",riskW:{low:"Low",med:"Medium",high:"High"},
-  riskSub:(up,bw)=>(up?"Above 200-day avg":"Below 200-day avg")+(bw?" · below 200-week":""),
-  act:{addStrong:"DCA more",dcaGrad:"DCA gradually",normal:"DCA as usual",hold:"Hold, slow buys",reduce:"Pause buys"},
   rpL:"Market cost basis (realized price)",nuplL:"Market mood (NUPL)",nuplPh:["Capitulation","Hope / fear","Optimism","Belief","Euphoria"],
   secDca:"DCA simulator · if you had scaled buys by this score",
   dcaHead:(e,st)=>`Starting in ${st}, scaling buys by the score gives an average cost per BTC <b style="color:var(--z-${e>=0?"good":"bad"})">${Math.abs(e).toFixed(1)}% ${e>=0?"lower":"higher"}</b> than buying the same amount every time`,
@@ -174,8 +166,6 @@ function head(id,str){const [t,sub]=str.split(" · "),h=document.getElementById(
 function applyStaticLang(){const l=L();
   document.documentElement.lang=LANG;
   document.getElementById("m-sub").textContent=l.sub;
-  document.getElementById("s-price-l").textContent=l.priceL;
-  document.getElementById("s-val-l").textContent=l.valL;
   document.getElementById("s-mom-l").textContent=l.momL;
   document.getElementById("ins-action-l").textContent=l.action;
   document.getElementById("ins-inval-l").textContent=l.invalidLbl;
@@ -192,10 +182,10 @@ function applyStaticLang(){const l=L();
   const lb=document.getElementById("langBtn");lb.textContent=LANG==="th"?"EN":"ไทย";lb.title=l.lang;
   document.getElementById("refresh").setAttribute("aria-label",l.refresh);themeBtnSync();
   document.getElementById("ins-disc").textContent=l.disc;
+  for(const k of ["bt","dca","cyc"])document.getElementById(k+"-note-s").textContent=l.method;
 }
 function setLang(x){LANG=x;localStorage.setItem("lang",x);applyStaticLang();if(COMP&&SNAP)render(lastT);}
 
-const SCALE_K=["bad","warn","neutral","ok","good"];
 function render(t){
   const l=L(),C=2*Math.PI*88,col=scoreVar(SNAP.overall);
   const arc=document.getElementById("arc");arc.style.stroke=col;arc.setAttribute("stroke-dasharray",C);arc.setAttribute("stroke-dashoffset",C);
@@ -216,30 +206,16 @@ function render(t){
   let line2=l.onchain(esc(ocDate),ocDays);if(ocDays>10)line2+=l.stale; // bitcoin-data free tier lags 7d (since 2026-09); warn only beyond that
   document.getElementById("asof").innerHTML=(t?l.priceLive(now):l.priceOff)+"<br>"+line2;
 
-  const cur=band(SNAP.overall),sl=document.getElementById("scale");sl.innerHTML="";
-  SCALE_K.forEach((k,i)=>{const d=document.createElement("div");d.className="seg"+(k===cur?" on":"");d.textContent=l.scale[i];if(k===cur)d.style.borderTopColor=`var(--z-${k})`;sl.appendChild(d);});
-
   const up=SNAP.values.mayer>=1,belowW=SNAP.values.wma_mult<1;
-  document.getElementById("s-price").textContent="$"+Math.round(SNAP.price).toLocaleString("en-US")+(t&&Number.isFinite(t.chg)?`  ${t.chg>=0?"+":"−"}${Math.abs(t.chg).toFixed(1)}%`:"");
-  const sv=document.getElementById("s-val");sv.textContent=l.zone[SNAP.label];sv.style.color=scoreVar(SNAP.overall);
-  const sm=document.getElementById("s-mom");sm.textContent=l.mom(up);sm.style.color=up?"var(--z-good)":"var(--z-warn)";
+  const riskKey=(!up&&belowW)?"high":(!up||belowW)?"med":"low";
+  const sm=document.getElementById("s-mom");sm.textContent=l.trend(up,belowW);sm.style.color=riskKey==="low"?"var(--z-good)":riskKey==="med"?"var(--z-neutral)":"var(--z-bad)";
   // realized price + NUPL (baked into data.json by the daily Action; shown only if present)
   const rpW=document.getElementById("s-rp-wrap"),nuW=document.getElementById("s-nupl-wrap");
   if(FRESH&&Number.isFinite(FRESH.realizedPrice)){document.getElementById("s-rp-l").textContent=l.rpL;document.getElementById("s-rp").textContent="$"+Math.round(FRESH.realizedPrice).toLocaleString("en-US");rpW.hidden=false;}else rpW.hidden=true;
   const nupl=FRESH&&Number.isFinite(FRESH.realizedPrice)?1-FRESH.realizedPrice/SNAP.price:FRESH&&FRESH.nupl; // NUPL = 1 − realized/market, at the live price
   if(Number.isFinite(nupl)){document.getElementById("s-nupl-l").textContent=l.nuplL;document.getElementById("s-nupl").textContent=nupl.toFixed(2)+" · "+nuplPhase(nupl);nuW.hidden=false;}else nuW.hidden=true;
-  // 3-layer Value / Risk / Action
-  const riskKey=(!up&&belowW)?"high":(!up||belowW)?"med":"low";
-  const actText=SNAP.overall>=55?(riskKey==="low"?l.act.addStrong:l.act.dcaGrad):SNAP.overall>=40?l.act.normal:(riskKey==="high"?l.act.reduce:l.act.hold);
-  const riskCol=riskKey==="low"?"var(--z-good)":riskKey==="med"?"var(--z-neutral)":"var(--z-bad)";
-  document.getElementById("layers").innerHTML=
-    `<div class="cell"><div class="k">${l.valueL}</div><div class="v" style="color:${scoreVar(SNAP.overall)}">${SNAP.overall.toFixed(0)}</div><div class="vs">${l.zone[SNAP.label]}</div></div>
-     <div class="cell"><div class="k">${l.riskL}</div><div class="v" style="color:${riskCol}">${l.riskW[riskKey]}</div><div class="vs">${l.riskSub(up,belowW)}</div></div>
-     <div class="cell"><div class="k">${l.actL}</div><div class="v act">${actText}</div></div>`;
-
-  const zhtml=`<b style="color:${scoreVar(SNAP.overall)}">${zInText(SNAP.label)}</b>`;
-  document.getElementById("ins-what").innerHTML=l.what(zhtml,SNAP.overall.toFixed(0),up,belowW);
-  document.getElementById("ins-dca").textContent=l.dca(SNAP.overall);
+  // one action line: the score sets how much, a weak short-term trend says spread it out
+  document.getElementById("ins-dca").textContent=l.dca(SNAP.overall)+(SNAP.overall>=40&&riskKey!=="low"?l.dcaWeak:"");
   const w200=COMP.ma200w[SNAP.idx];document.getElementById("ins-inval").textContent=l.inval(w200?Math.round(w200).toLocaleString("en-US"):"–");
 
   const rows=document.getElementById("rows");rows.innerHTML="";
@@ -249,10 +225,9 @@ function render(t){
     el.innerHTML=`<div class="id"><span class="nm">${s.title}</span><span class="tier ${s.tier}" title="${l.weight(s.weight)}">×${s.weight}</span><span class="st" style="color:var(--z-${k})">${l.status[s.key](v)}</span><button class="i" aria-label="${l.info(s.title)}" aria-expanded="false">ⓘ</button></div>
       <div class="val">${s.fmt(v)}</div>
       <div class="sparkwrap">${spark(s.key,s.bands)}<span class="sc"><b style="color:var(--z-${k})">${score.toFixed(0)}</b>/100</span></div>
-      <div class="rbar"><i style="background:var(--z-${k})"></i></div>
       <div class="info">${l.metric[s.key]||""}<span class="rd">${(l.read&&l.read[s.key])||""}</span></div>`;
     el.querySelector(".i").onclick=function(){this.setAttribute("aria-expanded",el.classList.toggle("open"));};
-    rows.appendChild(el);requestAnimationFrame(()=>{el.querySelector(".rbar i").style.width=score+"%";});
+    rows.appendChild(el);
   });
 
   buildTabs();drawChart();buildBtH();renderBacktest();

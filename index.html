@@ -65,7 +65,7 @@ h1,h2{margin:0;text-wrap:balance}
 .cbtn:hover,.cbtn:active{background:var(--ink);color:var(--bg)} .cbtn.busy{opacity:.4}
 .cbtn svg{width:17px;height:17px;display:block}
 
-.verdict{padding:24px 0 18px;border-bottom:1px solid var(--line);text-align:center}
+.verdict{padding:20px 0 16px;border-bottom:1px solid var(--line);text-align:center}
 .gauge{position:relative;width:196px;height:196px;margin:0 auto}
 .gauge svg{transform:rotate(-90deg);display:block}
 .gauge .track{fill:none;stroke:var(--line-soft);stroke-width:7}
@@ -82,34 +82,23 @@ h1,h2{margin:0;text-wrap:balance}
 .asof{font-size:var(--text-caption);color:var(--faint);margin-top:8px;line-height:1.55}
 .asof .stale{color:var(--z-warn);font-weight:600}
 
-.scale{display:flex;gap:3px;margin-top:18px}
-.scale .seg{flex:1;min-width:0;text-align:center;font-size:var(--text-caption);line-height:1.35;white-space:nowrap;color:var(--faint);padding-top:6px;border-top:3px solid var(--line);transition:.2s}
-.scale .seg.on{color:var(--ink);font-weight:700}
-
-.layers{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px}
-.layers .cell{border:1px solid var(--line);padding:11px 8px;text-align:center}
-.layers .cell .k{font-size:var(--text-caption);font-weight:600;color:var(--muted);line-height:1.35}
-.layers .cell .v{font-weight:700;font-size:var(--text-subhead);margin-top:4px;line-height:1.25}
-.layers .cell .v.act{font-size:var(--text-body);font-weight:600;color:var(--ink)}
-.layers .cell .vs{font-size:var(--text-caption);margin-top:4px;color:var(--muted);line-height:1.35}
-
-.summary{display:grid;gap:9px;margin:20px 0 4px}
-.summary div{display:flex;align-items:baseline;justify-content:space-between;gap:14px;border-bottom:1px dashed var(--line-soft);padding-bottom:8px}
-.summary span{font-size:var(--text-ui);color:var(--muted)}
-.summary b{font-weight:600;text-align:right}
-.insight{background:var(--surface);border:1px solid var(--line);padding:15px 16px;margin-top:16px}
-.insight p{margin:0 0 12px;line-height:1.65;max-width:65ch;text-wrap:pretty}
-.insight .ins-row{display:grid;grid-template-columns:auto 1fr;gap:10px;font-size:var(--text-ui);line-height:1.55;padding-top:10px;border-top:1px solid var(--line-soft)}
-.insight .ins-row span{font-size:var(--text-caption);font-weight:600;color:var(--muted);padding-top:1px;white-space:nowrap}
-.insight .ins-row b{font-weight:600}
-.insight .ins-disc{margin:12px 0 0;font-size:var(--text-caption);color:var(--muted)}
+.plan{margin:18px 0 0}
+.plan div{padding-bottom:14px}
+.plan dt{font-size:var(--text-caption);font-weight:600;color:var(--muted)}
+.plan dd{margin:2px 0 0;line-height:1.55;max-width:65ch;text-wrap:pretty}
+.plan div:first-child dd{font-weight:600}  /* what to do: the one line to act on */
+.disc{margin:0;font-size:var(--text-caption);color:var(--muted)}
+.facts{margin:18px 0 0;border-top:1px solid var(--line)}
+.facts div{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid var(--line-soft)}
+.facts dt{font-size:var(--text-ui);color:var(--muted)}
+.facts dd{margin:0;font-weight:600;text-align:right}
 
 /* section headings: real <h2>s in sentence case; text after " · " becomes a quiet subtitle */
 .lbl{font-size:var(--text-subhead);font-weight:700;line-height:1.3;color:var(--ink);margin:40px 0 12px}
 .lbl small{display:block;font-size:var(--text-ui);font-weight:400;color:var(--muted);line-height:1.45;margin-top:2px}
 
 .rows{border-top:1px solid var(--line)}
-.row{display:grid;grid-template-columns:1fr auto;grid-template-areas:"id val" "spark spark" "bar bar" "info info";gap:4px 14px;padding:14px 0;border-bottom:1px solid var(--line-soft);align-items:baseline}
+.row{display:grid;grid-template-columns:1fr auto;grid-template-areas:"id val" "spark spark" "info info";gap:4px 14px;padding:14px 0;border-bottom:1px solid var(--line-soft);align-items:baseline}
 .row .id{grid-area:id;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .row .nm{font-weight:600}
 .row .tier{font-size:var(--text-caption);font-weight:600;line-height:1.3;padding:0 5px;border:1px solid var(--line);color:var(--muted)}
@@ -121,8 +110,6 @@ h1,h2{margin:0;text-wrap:balance}
 .row .sparkwrap{grid-area:spark;display:flex;align-items:center;gap:10px;margin-top:2px}
 .row .spark{flex:1;height:28px;display:block}
 .row .sc{font-size:var(--text-ui);font-weight:600;color:var(--faint);min-width:52px;text-align:right}
-.row .rbar{grid-area:bar;height:3px;background:var(--line-soft);margin-top:8px}
-.row .rbar i{display:block;height:100%;width:0;transition:width 1s cubic-bezier(.2,.8,.2,1)}
 .row .info{grid-area:info;display:none;font-size:var(--text-ui);color:var(--muted);line-height:1.6;margin-top:9px;background:var(--surface);padding:10px 12px;border:1px solid var(--line-soft)}
 .row.open .info{display:block}
 .row .info .rd{display:block;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line-soft);font-size:var(--text-caption);color:var(--faint)}
@@ -149,6 +136,10 @@ h1,h2{margin:0;text-wrap:balance}
 .bt-row.thin .m{font-weight:600} /* too few non-overlapping periods: shown, not emphasised */
 .bt-row .w{font-size:var(--text-caption);color:var(--muted);text-align:right;min-width:74px}
 .bt-note{font-size:var(--text-caption);color:var(--faint);margin-top:13px;line-height:1.6;max-width:65ch}
+details.method{margin-top:6px}
+details.method summary{cursor:pointer;font-size:var(--text-ui);color:var(--muted);padding:12px 0;width:fit-content}
+details.method summary:hover{color:var(--ink)}
+details.method .bt-note{margin-top:0}
 
 /* DCA simulator */
 .dca-grid{display:grid;grid-template-columns:auto 1fr 1fr 1fr;gap:0 10px;border-top:1px solid var(--line);font-size:var(--text-ui)}
@@ -178,7 +169,7 @@ h1,h2{margin:0;text-wrap:balance}
 @keyframes flip{to{transform:rotateY(360deg)}}
 .overlay p{font-size:var(--text-ui);color:var(--muted);margin-top:18px}
 .overlay .err{color:var(--z-bad);max-width:280px}
-@media (prefers-reduced-motion: reduce){.gauge .arc,.row .rbar i,body{transition:none}.overlay .lc{animation:none}}
+@media (prefers-reduced-motion: reduce){.gauge .arc,body{transition:none}.overlay .lc{animation:none}}
 @media (max-width:360px){.score{font-size:3.25rem}.gauge{width:172px;height:172px}.mast h1{font-size:1.125rem}}
 
 /* ---------- desktop: two-column layout ---------- */
@@ -226,25 +217,20 @@ h1,h2{margin:0;text-wrap:balance}
     <div class="zone-th" id="zoneth"></div>
     <div class="tape"><span id="price">$–</span><span class="chg" id="chg"></span></div>
     <div class="asof" id="asof"></div>
-    <div class="scale" id="scale"></div>
   </section>
 
-  <div class="layers" id="layers"></div>
+  <!-- the recommendation, said once; then the few facts it rests on -->
+  <dl class="plan">
+    <div><dt id="ins-action-l"></dt><dd id="ins-dca"></dd></div>
+    <div><dt id="ins-inval-l"></dt><dd id="ins-inval"></dd></div>
+  </dl>
+  <p class="disc" id="ins-disc"></p>
 
-  <div class="summary">
-    <div><span id="s-price-l"></span><b id="s-price">–</b></div>
-    <div><span id="s-val-l"></span><b id="s-val">–</b></div>
-    <div><span id="s-mom-l"></span><b id="s-mom">–</b></div>
-    <div id="s-rp-wrap" hidden><span id="s-rp-l"></span><b id="s-rp">–</b></div>
-    <div id="s-nupl-wrap" hidden><span id="s-nupl-l"></span><b id="s-nupl">–</b></div>
-  </div>
-
-  <div class="insight">
-    <p id="ins-what"></p>
-    <div class="ins-row"><span id="ins-action-l"></span><b id="ins-dca"></b></div>
-    <div class="ins-row"><span id="ins-inval-l"></span><b id="ins-inval"></b></div>
-    <p class="ins-disc" id="ins-disc"></p>
-  </div>
+  <dl class="facts">
+    <div><dt id="s-mom-l"></dt><dd id="s-mom">–</dd></div>
+    <div id="s-rp-wrap" hidden><dt id="s-rp-l"></dt><dd id="s-rp">–</dd></div>
+    <div id="s-nupl-wrap" hidden><dt id="s-nupl-l"></dt><dd id="s-nupl">–</dd></div>
+  </dl>
   </div><!-- /col-a -->
 
   <div class="col-b">
@@ -263,7 +249,7 @@ h1,h2{margin:0;text-wrap:balance}
     <div class="bt-h" id="bth"></div>
     <div class="bt-head" id="bthead"></div>
     <div class="bt-rows" id="bt"></div>
-    <div class="bt-note" id="bt-note"></div>
+    <details class="method"><summary id="bt-note-s"></summary><div class="bt-note" id="bt-note"></div></details>
   </section>
 
   <section>
@@ -271,13 +257,13 @@ h1,h2{margin:0;text-wrap:balance}
     <div class="bt-h" id="dcaRange"></div>
     <div class="bt-head" id="dcaHead"></div>
     <div class="dca-grid" id="dcaGrid"></div>
-    <div class="bt-note" id="dca-note"></div>
+    <details class="method"><summary id="dca-note-s"></summary><div class="bt-note" id="dca-note"></div></details>
   </section>
 
   <section>
     <h2 class="lbl" id="lbl-cyc"></h2>
     <div class="cyc-rows" id="cycRows"></div>
-    <div class="bt-note" id="cyc-note"></div>
+    <details class="method"><summary id="cyc-note-s"></summary><div class="bt-note" id="cyc-note"></div></details>
   </section>
 
   <section>
@@ -292,6 +278,6 @@ h1,h2{margin:0;text-wrap:balance}
 </div>
 
 <script src="indicators.js?v=5"></script>
-<script src="app.js?v=6"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>
