@@ -138,10 +138,9 @@ async function ticker(){
    metrics so the browser never hits their 10 req/hr limit). Fallback: Coin Metrics CSV. */
 async function getRaw(){
   try{
-    const j=await(await get("data.json",15e3)).json(),fix=a=>a.map(v=>v===null?NaN:v);
-    if(!j.date||!j.date.length)throw new Error("empty");
-    RAW={date:j.date,price:fix(j.price),mcap:fix(j.mcap),mvrv:fix(j.mvrv),issUsd:fix(j.issUsd),issNtv:fix(j.issNtv),supply:fix(j.supply)};
-    FRESH=j.fresh||null;
+    const j=await(await get("data.json",15e3)).json();
+    if(!j.price||!j.price.length)throw new Error("empty");
+    RAW=Indicators.fromJSON(j);FRESH=j.fresh||null;
   }catch(e1){
     try{RAW=Indicators.parseCSV(await(await get(CSV,30e3)).text());FRESH=null;}
     catch(e2){throw new Error(`data.json: ${why(e1)} · CSV: ${why(e2)}`);}

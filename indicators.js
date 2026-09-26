@@ -38,6 +38,23 @@ function parseCSV(text) {
   return d;
 }
 
+/* data.json -> the column arrays the rest of this file uses. v2 (ADR-019) stores only what can't be
+   derived: dates from `start` (consecutive days), supply as supply0 + running sum of daily issuance
+   (Coin Metrics' own supply differs by <= 2e-5: burned and unclaimed coins), market cap = price x supply,
+   USD issuance = issuance x price. v1 files, with every array spelled out, still decode. */
+function fromJSON(j) {
+  const fix = (a) => a.map((v) => (v === null ? NaN : v));
+  const price = fix(j.price), issNtv = fix(j.issNtv), t0 = Date.parse(j.start + "T00:00:00Z");
+  const date = j.date || price.map((_, i) => new Date(t0 + i * DAY).toISOString().slice(0, 10));
+  let s = j.supply0;
+  const supply = j.supply ? fix(j.supply) : issNtv.map((v, i) => (i ? (s += Number.isFinite(v) ? v : 0) : s));
+  return {
+    date, price, mvrv: fix(j.mvrv), issNtv, supply,
+    mcap: j.mcap ? fix(j.mcap) : price.map((p, i) => p * supply[i]),
+    issUsd: j.issUsd ? fix(j.issUsd) : issNtv.map((v, i) => v * price[i]),
+  };
+}
+
 /* Append a synthetic 'today' row from a live price (mirrors indicators.append_today).
    On-chain quantities are carried from the last fully-populated row. */
 function appendToday(d, price, today) {
@@ -277,6 +294,6 @@ function cycleMatch(c, scores, win = 90, topK = 3) {
   return picked;
 }
 
-const Indicators = { parseCSV, appendToday, computeAll, snapshot, scoreSeries, backtest, dcaSim, cycleMatch, INDICES, zoneOf, sma };
+const Indicators = { parseCSV, fromJSON, appendToday, computeAll, snapshot, scoreSeries, backtest, dcaSim, cycleMatch, INDICES, zoneOf, sma };
 if (typeof module !== "undefined" && module.exports) module.exports = Indicators;
 if (typeof window !== "undefined") window.Indicators = Indicators;

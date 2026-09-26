@@ -20,7 +20,7 @@ Live: https://xyloheat.github.io/btc-buy-signal/ (GitHub Pages serves this repo 
 | `indicators.js` | Pure compute. No DOM. Also loadable in Node (`module.exports`) — that's how you test it. |
 | `build_data.py` | Stdlib-only. Builds `data.json`. Run daily by `.github/workflows/data.yml`. |
 | `sw.js` | Service worker. Network-first for HTML + data (concurrent requests for one URL share a fetch — Chrome ignores the `data.json` preload under a SW; on a slow network the cached copy answers after 4 s), cache-first for static. The live price (Binance/CoinGecko) bypasses it, so a cached price is never shown as live. |
-| `data.json` | Generated. **Never hand-edit** — the daily Action overwrites it. |
+| `data.json` | Generated. **Never hand-edit** — the daily Action overwrites it. Format v2 (ADR-019): `start`, `price`, `mvrv`, `issNtv`, `supply0`, `fresh`; `Indicators.fromJSON()` rebuilds dates, supply, market cap and USD issuance (it also reads v1 files). |
 | `fonts/` | Self-hosted woff2 subsets of **Anuphan**, the only typeface (Thai + Latin, tabular digits) + its OFL licence. `@font-face` rules sit at the top of `index.html`'s `<style>` (ADR-012). |
 | `docs/adr.md` | Every architecture/design decision with context + consequences. |
 
@@ -51,10 +51,7 @@ Service worker caches aggressively. When a change doesn't appear, unregister it 
 ```bash
 node -e '
 const fs=require("fs"), I=require("./indicators.js");
-const j=JSON.parse(fs.readFileSync("data.json","utf8"));
-const fix=a=>a.map(v=>v===null?NaN:v);
-const RAW={date:j.date,price:fix(j.price),mcap:fix(j.mcap),mvrv:fix(j.mvrv),
-           issUsd:fix(j.issUsd),issNtv:fix(j.issNtv),supply:fix(j.supply)};
+const RAW=I.fromJSON(JSON.parse(fs.readFileSync("data.json","utf8")));
 const c=I.computeAll(RAW), sc=I.scoreSeries(c);
 console.log("last:", c.date.at(-1), "score:", sc.at(-1).toFixed(1));
 console.log(I.snapshot(c).label);
@@ -96,6 +93,7 @@ Trigger manually: `gh workflow run data.yml`.
 
 ## Gotchas
 
+- **`data.json` holds only what can't be derived** (ADR-019, ~43 KB gzipped). A new history column goes in `build_data.py`'s `out` and `fromJSON()`; never add a column the client can compute (market cap, USD issuance, supply and dates are all rebuilt). Round at write time, to significant digits, and check the score before and after with the Node snippet above.
 - **`data.json` merge conflicts** are routine — the Action commits it daily. After a local rebuild: `git checkout --ours data.json && git add data.json` during a rebase.
 - **Binance returns HTTP 451 on GitHub runners** (US geo-block). `build_data.py` falls back to Kraken OHLC. Locally Binance works, so a build that passes on your machine can still fail in CI — check the Action run.
 - **Coin Metrics history can silently stall** (it froze for 2.5 months in 2026). `build_data.py` extends past its end automatically; if months go missing on the heatmap, check `data.json`'s last `date` first. Filled days use the **90-day mean** daily issuance — never a single day's value (one day can be ±15% off with block luck; the last Coin Metrics day was 512.5 BTC vs ~447 avg and inflated Puell ~9%).

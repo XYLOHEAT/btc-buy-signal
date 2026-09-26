@@ -2,7 +2,9 @@
 """Build slim data.json for the BTC Accumulation dashboard.
 
 Run daily by GitHub Actions. Pure stdlib (no pip install needed).
-- RAW on-chain history from Coin Metrics community CSV (7 fields, rounded).
+- RAW on-chain history from Coin Metrics community CSV, written as data.json v2: only what the
+  client can't derive (price, MVRV, daily issuance; dates, supply, market cap and USD issuance are
+  rebuilt by indicators.js fromJSON). ADR-019.
 - Fresh current metrics from bitcoin-data.com (MVRV-Z, Puell, NUPL, realized price)
   fetched ONCE per run (well under the 10 req/hour free limit; the web no longer
   hits bitcoin-data per page load, which is what blew the limit).
@@ -29,18 +31,16 @@ def num(s):
 
 # ---- RAW history ----
 rows = list(csv.DictReader(io.StringIO(fetch(CSV_URL))))
-date, price, mcap, mvrv, issUsd, issNtv, supply = [], [], [], [], [], [], []
+date, price, mvrv, issNtv, supply = [], [], [], [], []  # full precision; rounded once, at write
 for row in rows:
     t = (row.get("time") or "").strip()
     p, mc = num(row.get("PriceUSD")), num(row.get("CapMrktCurUSD"))
     if p is None or mc is None or not DATE_RE.match(t):
         continue
-    date.append(t)
-    price.append(rnd(p, 2)); mcap.append(rnd(mc, 0))
-    mvrv.append(rnd(num(row.get("CapMVRVCur")), 5))
-    issUsd.append(rnd(num(row.get("IssTotUSD")), 0))
-    issNtv.append(rnd(num(row.get("IssTotNtv")), 4))
-    supply.append(rnd(num(row.get("SplyCur")), 2))
+    date.append(t); price.append(p)
+    mvrv.append(num(row.get("CapMVRVCur")))
+    issNtv.append(num(row.get("IssTotNtv")))
+    supply.append(num(row.get("SplyCur")))
 
 # ---- extend history past Coin Metrics' end (upstream stalled 2026-05; ADR-011) ----
 # Price from Binance daily klines; realized cap from bitcoin-data realized-price
@@ -96,10 +96,9 @@ try:
             p = px[d0]
             S = S + iN  # ponytail: linear supply carry (~0.05%/mo error), fine for MVRV-Z
             last_rp = rp.get(d0, last_rp)
-            mc = p * S
-            date.append(d0); price.append(rnd(p, 2)); mcap.append(rnd(mc, 0))
-            mvrv.append(rnd(mc / (last_rp * S), 5) if last_rp else None)
-            issUsd.append(rnd(iN * p, 0)); issNtv.append(rnd(iN, 4)); supply.append(rnd(S, 2))
+            date.append(d0); price.append(p)
+            mvrv.append(p / last_rp if last_rp else None)  # market cap / realized cap, both x supply
+            issNtv.append(iN); supply.append(S)
 except Exception as e:
     print("history extension skipped:", e)  # degrade to plain Coin Metrics history
 
@@ -126,9 +125,26 @@ rpV, d4 = bd_last("realized-price")
 fresh = {"date": d1 or d2 or d3 or d4, "mvrv": mvrvV, "puell": puellV,
          "nupl": nuplV, "realizedPrice": rpV}
 
-out = {"generated": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),
-       "date": date, "price": price, "mcap": mcap, "mvrv": mvrv,
-       "issUsd": issUsd, "issNtv": issNtv, "supply": supply, "fresh": fresh}
+# ---- write v2: only what the client can't derive (ADR-019) ----
+def j_num(v):  # integral values as ints: "86197", not "86197.0"
+    return None if v is None else (int(v) if float(v).is_integer() else v)
+
+def sig(v, n=5):
+    return None if v is None else float(f"{v:.{n}g}")
+
+def px_out(v):  # 5 significant digits (relative error <= 5e-5); whole dollars from $10,000
+    return None if v is None else (round(v) if v >= 10000 else sig(v))
+
+days = [datetime.date.fromisoformat(d) for d in date]
+consecutive = all((b - a).days == 1 for a, b in zip(days, days[1:]))
+out = {"v": 2,
+       "generated": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),
+       **({"start": date[0]} if consecutive else {"date": date}),  # a gap keeps explicit dates
+       "price": [j_num(px_out(v)) for v in price],
+       "mvrv": [j_num(sig(v)) for v in mvrv],  # 5 significant digits: MVRV-Z moves < 1e-4
+       "issNtv": [j_num(rnd(v, 3)) for v in issNtv],  # exact: block rewards are multiples of 1/8 BTC
+       "supply0": j_num(rnd(supply[0], 2)),
+       "fresh": fresh}
 
 with open("data.json", "w") as f:
     json.dump(out, f, separators=(",", ":"))
