@@ -1,0 +1,21 @@
+{
+  "name": "btc-buy-signal",
+  "private": true,
+  "description": "Bitcoin accumulation dashboard. Static site; build.mjs compiles the StyleX UI (ADR-021).",
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node --watch-path=src --watch-preserve-output build.mjs"
+  },
+  "browserslist": [
+    "iOS >= 15",
+    "Safari >= 15",
+    "Chrome >= 100",
+    "Firefox >= 100",
+    "Edge >= 100"
+  ],
+  "devDependencies": {
+    "@stylexjs/stylex": "^0.19.1",
+    "@stylexjs/unplugin": "^0.19.1",
+    "esbuild": "^0.28.2"
+  }
+}

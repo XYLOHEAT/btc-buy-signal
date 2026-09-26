@@ -14,7 +14,7 @@ Reframed as *accumulation/DCA guidance*, not a buy signal. Not financial advice.
 - **PWA** (installable, offline) · mobile-first + desktop two-column
 
 ## How it works
-- `index.html` UI/CSS · `app.js` render/i18n · `indicators.js` pure compute (also runs in Node) · `sw.js` service worker · `fonts/` self-hosted fonts
+- `src/` UI source with [StyleX](https://stylexjs.com) styles · `build.mjs` compiles it into `app.js` + the CSS inlined in `index.html` (both committed) · `indicators.js` pure compute (also runs in Node) · `sw.js` service worker · `fonts/` self-hosted fonts
 - `build_data.py` (stdlib) builds `data.json` daily via GitHub Action — Coin Metrics history, extended past its end with Kraken/Binance daily closes + bitcoin-data.com realized price (keeps the browser off bitcoin-data's 10 req/hr limit)
 - Browser reads `data.json` (CSV fallback) + live price from Binance (CoinGecko fallback); today's MVRV-Z / Puell / NUPL are computed at the live price
 
@@ -23,6 +23,7 @@ Strict CSP (`script-src 'self'`, no `unsafe-inline`; `font-src 'self'`) · SRI o
 
 ## Run locally
 ```bash
+npm ci && npm run watch       # rebuild the UI on every change in src/
 python3 -m http.server 8777   # fetch needs http://, not file://
 ```
 

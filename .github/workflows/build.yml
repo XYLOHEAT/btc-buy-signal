@@ -1,0 +1,24 @@
+name: Build check
+# The site is served exactly as committed: app.js and index.html's <style id="stylex"> are generated from src/
+# by build.mjs (ADR-021). This fails when they weren't rebuilt after a change, before a stale page ships.
+on:
+  push:
+    branches: [main]
+    paths: ["src/**", "build.mjs", "package.json", "package-lock.json", "app.js", "index.html"]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Committed build output is current
+        run: git diff --exit-code -- app.js index.html || { echo "::error::Run 'npm run build' and commit app.js + index.html"; exit 1; }
