@@ -71,13 +71,13 @@ export const sx = stylex.create({
   anchor: { scrollMarginTop: { default: space.lg, [mq.desktop]: `calc(var(--toc-h, 3rem) + ${space.lg})` } },
 
   /* ---------- on this page: the option-row look (muted, the current one in ink with an underline). Phones and
-     tablets: under the verdict. Desktop: a bar that sticks to the top of the evidence column ---------- */
+     tablets: tocIn, in the verdict column above the facts. Desktop: toc, a bar that sticks to the top of the evidence
+     column. Only one is ever displayed ---------- */
+  tocIn: { marginTop: space.lg, display: { default: null, [mq.desktop]: "none" } },
   toc: {
-    marginTop: { default: space.xl, [mq.desktop]: 0 },
-    gridColumn: { default: null, [mq.desktop]: 2 }, gridRow: { default: null, [mq.desktop]: 1 },
-    position: { default: null, [mq.desktop]: "sticky" }, top: 0, zIndex: { default: null, [mq.desktop]: 1 }, // above the charts and 3D boxes it slides over
-    backgroundColor: { default: null, [mq.desktop]: "var(--bg)" },
-    borderBottomWidth: { default: 0, [mq.desktop]: 1 }, borderBottomStyle: "solid", borderBottomColor: "var(--line)",
+    display: { default: "none", [mq.desktop]: "block" },
+    gridColumn: 2, gridRow: 1, position: "sticky", top: 0, zIndex: 1, // above the charts and 3D boxes it slides over
+    backgroundColor: "var(--bg)", borderBottomWidth: 1, borderBottomStyle: "solid", borderBottomColor: "var(--line)",
   },
   tocL: { fontSize: text.caption, fontWeight: 600, color: "var(--muted)", display: { default: null, [mq.desktop]: "none" } },
   tocLinks: { display: "flex", flexWrap: "wrap", marginLeft: `calc(-1 * ${space.sm})` },

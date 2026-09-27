@@ -27,8 +27,8 @@ const T={
   onchain:(d,days)=>`ข้อมูล on-chain ถึง ${d} · ${days<=1?"วันนี้":days+" วันก่อน"}`, stale:` <span class="${x(sx.stale)}">⚠\uFE0E เก่ากว่าปกติ</span>`,
   hz:["1 เดือน","3 เดือน","6 เดือน","1 ปี"],
   btHead:(z,m,h,n,w)=>`วันที่อยู่ระดับ${z}แบบวันนี้ อีก ${h}ต่อมาราคาเปลี่ยนไป <b>${m}</b> (ค่ากลาง) <span class="${x(sx.btNote)}">จาก ${n} วัน · ราคาขึ้น ${w}% ของครั้ง</span>`,
-  btWin:(w,n)=>`ขึ้น ${w}% · ${n} วัน`, btThin:n=>`ข้อมูลน้อย · ${n} วัน`, btThinNow:"ระดับนี้ข้อมูลยังน้อย อย่าเพิ่งเชื่อตัวเลขนี้มาก", btN0:"ไม่มีข้อมูล",
-  btNote:"นับทุกวันตั้งแต่ปี 2014 ที่มีคะแนนครบ แล้วดูราคาหลังจากนั้นตามระยะที่เลือก · ค่ากลาง (median) คือผลตรงกลางของทุกวันในระดับนั้น · วันที่ติดกันใช้ช่วงเวลาซ้อนกัน แถวสีเทาคือระดับที่มีช่วงไม่ซ้อนกันไม่ถึง 3 ช่วง ยังเชื่อถือไม่ได้ · ผลในอดีตไม่รับประกันอนาคต",
+  btWin:(w,n)=>`ขึ้น ${w}% · ${n} วัน`, btThin:n=>`ข้อมูลน้อย · ${n} วัน`, btHeadThin:(z,h,n)=>`วันที่อยู่ระดับ${z}แบบวันนี้มีแค่ ${n} วัน นับเป็นช่วงละ ${h} ที่ไม่ซ้อนกันได้ไม่ถึง 3 ช่วง จึงยังบอกไม่ได้ว่าราคาเปลี่ยนไปเท่าไร`, btN0:"ไม่มีข้อมูล",
+  btNote:"นับทุกวันตั้งแต่ปี 2014 ที่มีคะแนนครบ แล้วดูราคาหลังจากนั้นตามระยะที่เลือก · ค่ากลาง (median) คือผลตรงกลางของทุกวันในระดับนั้น · วันที่ติดกันใช้ช่วงเวลาซ้อนกัน ระดับที่มีช่วงไม่ซ้อนกันไม่ถึง 3 ช่วงไม่แสดงค่ากลาง เพราะยังเชื่อถือไม่ได้ · ผลในอดีตไม่รับประกันอนาคต",
   loading:"กำลังโหลดราคาและข้อมูล on-chain…", err:m=>`โหลดข้อมูลไม่สำเร็จ ตรวจสอบอินเทอร์เน็ตแล้วลองอีกครั้ง<small class="${x(sx.alertSmall)}">${m}</small>`, retry:"ลองอีกครั้ง",
   ready:(n,z,p)=>`อัปเดตแล้ว คะแนน ${n} จาก 100 ระดับ${z} ราคา ${p}`, noData:"ข้อมูลยังไม่พอสำหรับช่วงนี้",
   foot:`ต้นทุนเฉลี่ยตลาด: <a href="https://bitcoin-data.com" target="_blank" rel="noopener">bitcoin-data.com</a> (ช้าราว 7 วัน) · ประวัติ: <a href="https://github.com/coinmetrics/data" target="_blank" rel="noopener">Coin Metrics</a> (<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a>) · ราคา: Binance / Kraken / CoinGecko<br>ใช้ส่วนตัว ไม่เชิงพาณิชย์`,
@@ -61,6 +61,7 @@ const T={
   hxAria:"กราฟ 3 มิติ: ราคา BTC ทุกวันพันเป็นเกลียว หนึ่งรอบต่อหนึ่งช่วง halving ใช้ปุ่มลูกศรเพื่อหมุน",
   v3Fail:"เบราว์เซอร์นี้แสดงภาพ 3 มิติไม่ได้ ข้อสรุปอยู่ด้านบน", v3Wait:"กำลังโหลดภาพ 3 มิติ…", v3Net:"โหลดภาพ 3 มิติไม่สำเร็จ ตรวจสอบอินเทอร์เน็ตแล้วลองอีกครั้ง", barHint:"ลากเพื่อหมุน หรือใช้ปุ่มลูกศร · ชี้หรือแตะแท่งเพื่อดูค่า",
   hmV:["2 มิติ","3 มิติ"], hmAria:"ภาพ 3 มิติของคะแนนรายเดือน ความสูงของแท่งคือคะแนน ใช้ปุ่มลูกศรเพื่อหมุน", hmFail:"เบราว์เซอร์นี้แสดงภาพ 3 มิติไม่ได้ เลือก 2 มิติเพื่อดูตาราง",
+  ixIndex:"ดัชนี",
   secIx:"6 ดัชนีย้อนหลัง · คะแนนรายเดือนของแต่ละดัชนี แท่งสูงคือถูก ช่วงที่ทุกแถวสูงพร้อมกันคือช่วงที่ดัชนีเห็นตรงกัน",
   ixV:["เอียง","มองจากบน"], ixRun:k=>` (ตอนนี้ต่อเนื่องมา ${k} เดือน)`, ixTip:(t,ym,s,z)=>`${t} · ${ym} · ${s} ${z}`,
   ixCap:(n,N,yrs,run,lo)=>`ทั้ง 6 ดัชนีให้คะแนนถูกมาก (75 ขึ้นไป) พร้อมกัน ${n} จาก ${N} เดือน ในปี ${yrs}${run} · แพงพร้อมกันทั้ง 6 (ต่ำกว่า 25) ${lo.length?lo.length===1?"มีเดือนเดียว คือ "+lo[0]:lo.length+" เดือน ล่าสุด "+lo[lo.length-1]:"ไม่เคยเกิด"} · ดัชนีเห็นตรงกันได้นานหลายเดือนก่อนราคาจะกลับตัว`,
@@ -92,8 +93,8 @@ const T={
   onchain:(d,days)=>`On-chain data to ${d} · ${days<=1?"today":days+" days ago"}`, stale:` <span class="${x(sx.stale)}">⚠\uFE0E older than usual</span>`,
   hz:["1 month","3 months","6 months","1 year"],
   btHead:(z,m,h,n,w)=>`On past ${z} days like today, price ${h} later moved <b>${m}</b> (median) <span class="${x(sx.btNote)}">across ${n} days · up ${w}% of the time</span>`,
-  btWin:(w,n)=>`up ${w}% · ${n} days`, btThin:n=>`thin data · ${n} days`, btThinNow:"thin data at this level, treat with caution", btN0:"no data",
-  btNote:"Every day since 2014 with a full score, then the price change after the chosen period · median = the middle result of all days at that level · consecutive days share overlapping periods, so grey rows have fewer than 3 non-overlapping periods and can't be trusted yet · past results don't guarantee the future",
+  btWin:(w,n)=>`up ${w}% · ${n} days`, btThin:n=>`thin data · ${n} days`, btHeadThin:(z,h,n)=>`Only ${n} ${z} days like today: fewer than 3 separate periods of ${h}, too few to say how price moved`, btN0:"no data",
+  btNote:"Every day since 2014 with a full score, then the price change after the chosen period · median = the middle result of all days at that level · consecutive days share overlapping periods, so levels with fewer than 3 non-overlapping periods show no median: too few to trust · past results don't guarantee the future",
   loading:"Loading price and on-chain data…", err:m=>`Couldn't load the data. Check your connection and try again.<small class="${x(sx.alertSmall)}">${m}</small>`, retry:"Try again",
   ready:(n,z,p)=>`Updated. Score ${n} of 100, ${z}, price ${p}.`, noData:"Not enough data for this yet",
   foot:`Market cost basis: <a href="https://bitcoin-data.com" target="_blank" rel="noopener">bitcoin-data.com</a> (about 7 days behind) · History: <a href="https://github.com/coinmetrics/data" target="_blank" rel="noopener">Coin Metrics</a> (<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a>) · Price: Binance / Kraken / CoinGecko<br>Personal, non-commercial`,
@@ -126,6 +127,7 @@ const T={
   hxAria:"3D chart: every day's BTC price wound into a spiral, one turn per halving cycle. The arrow keys turn it.",
   v3Fail:"This browser can't show the 3D view. The summary is above.", v3Wait:"Loading the 3D view…", v3Net:"The 3D view didn't load. Check your connection and try again.", barHint:"Drag to turn, or use the arrow keys · point at or tap a bar for its value",
   hmV:["2D","3D"], hmAria:"3D view of the monthly score: bar height is the score. The arrow keys turn it.", hmFail:"This browser can't show the 3D view. Choose 2D for the grid.",
+  ixIndex:"Index",
   secIx:"The six indices over time · each index's monthly score; tall is cheap, and stretches where every row stands tall are when they agreed",
   ixV:["Tilted","From above"], ixRun:k=>` (the last ${k} months running)`, ixTip:(t,ym,s,z)=>`${t} · ${ym} · ${s} ${z}`,
   ixCap:(n,N,yrs,run,lo)=>`All six indices scored very cheap (75+) together in ${n} of ${N} months, in ${yrs}${run} · all six expensive together (under 25): ${lo.length?lo.length===1?"only "+lo[0]:lo.length+" months, latest "+lo[lo.length-1]:"never"} · they can agree for months before the price turns`,
@@ -264,7 +266,7 @@ function applyStaticLang(){const l=L();
   head("lbl-hx",l.secHx);
   document.getElementById("hx-note").innerHTML=l.hxNote(monthYear(CYC[CYC.length-1]));
   head("lbl-ix",l.secIx);hxSelShow();
-  document.getElementById("toc-l").textContent=l.tocL;[...document.getElementById("tocLinks").children].forEach((a,i)=>a.textContent=l.toc[i]);document.getElementById("ix-note").innerHTML=l.ixNote;
+  for(const n of document.querySelectorAll("[data-toc]")){n.querySelector("div").textContent=l.tocL;n.querySelectorAll("a").forEach((a,i)=>a.textContent=l.toc[i]);}document.getElementById("ix-note").innerHTML=l.ixNote;
   for(const [k,hint,aria] of [["hx",l.hxHint,l.hxAria],["hr",l.barHint,l.hmAria],["ix",l.barHint,l.ixAria]]){
     document.getElementById(k+"Hint").textContent=hint;document.getElementById(k+"Canvas").setAttribute("aria-label",aria);v3Msg(k);}
   document.getElementById("hxKey").innerHTML=zoneKey(sx.v3Swatch,true);document.getElementById("ixKey").innerHTML=zoneKey(sx.swatch);
@@ -538,6 +540,7 @@ function helixLoad(){
 }
 /* a similar period or a heatmap month on the spiral: bring the spiral into view (loading it if needed), light the days */
 function showOnHelix(d0,d1){
+  history.pushState(null,"","#spiral"); // Back returns to the table or heatmap it came from
   hxWant=[d0,d1];hxNear=true;
   document.getElementById("hxBox").scrollIntoView({block:"center",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
   helixLoad();hxFocus();
@@ -572,6 +575,14 @@ function renderIndices(){
   const hi=every(s=>s>=75),lo=every(s=>s<25),set=new Set(hi),spans=[];
   let run=0;while(run<C&&set.has(ms[C-1-run]))run++;
   for(const y of new Set(hi.map(m=>+m.slice(0,4)))){const sp=spans[spans.length-1];if(sp&&y===sp[1]+1)sp[1]=y;else spans.push([y,y]);}
+  // screen readers get the same data as a table of yearly averages (the terrain itself is aria-described by the caption)
+  const I=Indicators.INDICES,ys=[...new Set(ms.map(m=>m.slice(0,4)))];
+  let t=`<tr><th scope="col">${l.ixIndex}</th>${ys.map(y=>`<th scope="col">${y}</th>`).join("")}</tr>`;
+  for(let r=0;r<R;r++){t+=`<tr><th scope="row">${short(I[r])}</th>`;
+    for(const y of ys){const a=ms.map((m,c)=>m.startsWith(y)?v[r*C+c]:NaN).filter(Number.isFinite),s=a.length?Math.round(a.reduce((p,q)=>p+q,0)/a.length):null;
+      t+=`<td>${s===null?"–":s+" "+l.zone[BZ[band(s)]]}</td>`;}
+    t+="</tr>";}
+  document.getElementById("ixTbl").innerHTML=t;
   document.getElementById("ixCap").innerHTML=hi.length?l.ixCap(hi.length,C,list(spans.map(([a,b])=>a===b?a:a+"–"+String(b).slice(2))),run?l.ixRun(run):"",lo.map(monthYear)):"";
   if(IX)IX.setTheme(v3Colors(),v3Grid());else ixLoad();
 }
@@ -589,11 +600,13 @@ function renderBacktest(){
   const l=L(),bt=Indicators.backtest(COMP,SCORES,curH),cur=bt.find(b=>b.zone===SNAP.label),hL=l.hz[[30,90,180,365].indexOf(curH)];
   // overlapping daily windows aren't independent: under 3 non-overlapping periods is too little to trust
   const thin=b=>b.n/curH<3;
-  document.getElementById("bthead").innerHTML=(cur&&cur.n)?l.btHead(`<b style="color:${scoreVar(SNAP.overall)}">${zInText(SNAP.label)}</b>`,pct(cur.median),hL,cur.n,Math.round(cur.win*100))+(thin(cur)?` <span class="${x(sx.btNote)}">${l.btThinNow}</span>`:""):"";
+  // a level with too few separate periods gets no median anywhere: a number the page calls unreliable shouldn't lead
+  const zb=`<b style="color:${scoreVar(SNAP.overall)}">${zInText(SNAP.label)}</b>`;
+  document.getElementById("bthead").innerHTML=!(cur&&cur.n)?"":thin(cur)?l.btHeadThin(zb,hL,cur.n):l.btHead(zb,pct(cur.median),hL,cur.n,Math.round(cur.win*100));
   const box=document.getElementById("bt");box.innerHTML="";
   bt.forEach(b=>{const k=band(b.zone==="STRONG BUY"?80:b.zone==="ACCUMULATE"?60:b.zone==="NEUTRAL"?45:b.zone==="CAUTION"?30:10),weak=!b.n||thin(b);
     const el=document.createElement("div");el.className=x(sx.btRow,b.zone===SNAP.label&&sx.btRowOn);
-    el.innerHTML=`<span class="${x(sx.btZ)}" style="color:var(--z-${k})">${l.zone[b.zone]}</span><span class="${x(sx.btM,weak&&sx.btMThin)}" style="color:${weak?"var(--muted)":b.median>=0?"var(--z-good)":"var(--z-bad)"}">${b.n?pct(b.median):"–"}</span><span class="${x(sx.btW)}">${!b.n?l.btN0:thin(b)?l.btThin(b.n):l.btWin(Math.round(b.win*100),b.n)}</span>`;
+    el.innerHTML=`<span class="${x(sx.btZ)}" style="color:var(--z-${k})">${l.zone[b.zone]}</span><span class="${x(sx.btM,weak&&sx.btMThin)}" style="color:${weak?"var(--muted)":b.median>=0?"var(--z-good)":"var(--z-bad)"}">${weak?"–":pct(b.median)}</span><span class="${x(sx.btW)}">${!b.n?l.btN0:thin(b)?l.btThin(b.n):l.btWin(Math.round(b.win*100),b.n)}</span>`;
     box.appendChild(el);});
 }
 /* vertical dashed line + year at each halving (price/score tabs); a legend entry says what the line is */
@@ -652,6 +665,10 @@ function drawChart(){
 
 /* ---------- shell: all markup lives here so every element gets its StyleX roles ---------- */
 const TOC=["indices","charts","backtest","dca","similar","spiral","monthly","index-history"]; // section ids, in page order
+/* on this page, one list per layout: tocA in the verdict column above the facts (phones, tablets), tocB a sticky bar
+   over the evidence column (desktop). display: none takes the other one out of the reading and focus order too */
+const tocNav=(cls,k)=>`<nav class="${x(cls)}" id="${k}" aria-labelledby="${k}-l" data-toc><div class="${x(sx.tocL)}" id="${k}-l"></div>
+  <div class="${x(sx.tocLinks)}">${TOC.map(id=>`<a class="${x(sx.tocLink)}" href="#${id}"></a>`).join("")}</div></nav>`;
 const method=k=>`<details class="${x(sx.method)}"><summary class="${x(sx.summary)}" id="${k}-note-s"></summary><div class="${x(sx.note)}" id="${k}-note"></div></details>`;
 /* a fact: label with its ⓘ, value, and the note the ⓘ opens (full width, under the row) */
 const fact=(id,wrap)=>`<div class="${x(sx.fact)}"${wrap?` id="${id}-wrap"`:""}><dt class="${x(sx.factDt)}"><span id="${id}-l"></span><button class="${x(sx.infoBtn,sx.factBtn)}" id="${id}-b" aria-expanded="false">ⓘ</button></dt><dd class="${x(sx.factDd)}" id="${id}">–</dd><dd class="${x(sx.info,sx.factInfo)}" id="${id}-i" hidden></dd></div>`;
@@ -687,11 +704,10 @@ const shell=()=>`
     <div><dt class="${x(sx.planDt)}" id="ins-inval-l"></dt><dd class="${x(sx.planDd,sx.sk,sx.skText,sx.hInval)}" id="ins-inval" data-sk></dd></div>
   </dl>
   <p class="${x(sx.disc)}" id="ins-disc"></p>
+  ${tocNav(sx.tocIn,"tocA")}
   <dl class="${x(sx.facts)}">${fact("s-mom")}${fact("s-rp",1)}${fact("s-nupl",1)}</dl>
 </div>
-<!-- on this page: under the verdict on phones and tablets; on desktop a sticky bar over the evidence column -->
-<nav class="${x(sx.toc)}" aria-labelledby="toc-l"><div class="${x(sx.tocL)}" id="toc-l"></div>
-  <div class="${x(sx.tocLinks)}" id="tocLinks">${TOC.map(id=>`<a class="${x(sx.tocLink)}" href="#${id}"></a>`).join("")}</div></nav>
+${tocNav(sx.toc,"tocB")}
 <div class="${x(sx.colB)}">
   <section class="${x(sx.anchor)}" id="indices">
     <h2 class="${x(sx.lbl,sx.lblFirst)}" id="lbl-index"></h2>
@@ -748,6 +764,7 @@ const shell=()=>`
     <div class="${x(sx.opts,sx.btH)}" id="ixViews" role="group"></div>
     <div class="${x(sx.btHead,sx.sk,sx.skText,sx.hIxCap)}" id="ixCap" data-sk></div>
     ${box3d("ix",sx.v3Ix,"ixCap")}
+    <div class="${x(sx.sr)}"><table id="ixTbl" aria-labelledby="lbl-ix"></table></div>
     <div class="${x(sx.v3Hint)}" id="ixHint"></div>
     <div class="${x(sx.hmKey)}" id="ixKey" aria-hidden="true"></div>
     ${method("ix")}
@@ -771,10 +788,10 @@ applyStaticLang();document.getElementById("app").hidden=false; // shown once lab
 const inBand=new Set(),tocIO=new IntersectionObserver(es=>{
   for(const e of es)e.isIntersecting?inBand.add(e.target.id):inBand.delete(e.target.id);
   const cur=TOC.find(id=>inBand.has(id));
-  if(cur)for(const a of document.getElementById("tocLinks").children)a.hash==="#"+cur?a.setAttribute("aria-current","true"):a.removeAttribute("aria-current");
+  if(cur)for(const a of document.querySelectorAll("[data-toc] a"))a.hash==="#"+cur?a.setAttribute("aria-current","true"):a.removeAttribute("aria-current");
 },{rootMargin:"-10% 0px -70% 0px"});
 for(const id of TOC)tocIO.observe(document.getElementById(id));
-const tocNav=document.querySelector("nav");new ResizeObserver(()=>document.documentElement.style.setProperty("--toc-h",tocNav.offsetHeight+"px")).observe(tocNav);
+const tocBar=document.getElementById("tocB");new ResizeObserver(()=>document.documentElement.style.setProperty("--toc-h",tocBar.offsetHeight+"px")).observe(tocBar);
 near("hxBox",()=>{hxNear=true;helixLoad();});near("ixBox",()=>{ixNear=true;ixLoad();});
 // a similar period's date, or a heatmap month: show it on the spiral
 document.getElementById("cycRows").onclick=e=>{const b=e.target.closest("[data-w]");if(b)showOnHelix(...b.dataset.w.split(" "));};
