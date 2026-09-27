@@ -284,6 +284,7 @@ export const sx = stylex.create({
   // dimmed if the data failed. Ready, no-WebGL and failed-load boxes (data-state set) drop it
   v3Box: {
     position: "relative", overflow: "hidden", userSelect: "none", WebkitUserSelect: "none",
+    maxHeight: "85vh", // a phone held sideways (375px tall) still sees a whole view
     backgroundImage: { default: null, ":not([data-state])": "repeating-linear-gradient(transparent 0 calc(25% - 1px), var(--line-soft) calc(25% - 1px) 25%)" },
     animationName: { default: null, ":not([data-state])": { default: pulse, [failed]: "none", [mq.reduce]: "none" } },
     animationDuration: "1.2s", animationTimingFunction: "ease-in-out", animationIterationCount: "infinite", animationDirection: "alternate",

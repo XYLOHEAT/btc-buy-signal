@@ -542,7 +542,10 @@ function hxFocus(){
 
 /* ---- the six indices over time (ADR-023): each index's monthly average score from the first scored month; rows in
    INDICES order, Ahr999 at the back ---- */
-let IX=null,ixNear=false,ixAsked=false,curIx="tilt";
+// ponytail: "narrow" is measured once at load (a phone turned sideways keeps it). Phones get a squarer field (taller
+// rows for a 343px box) and start from above, where all six names and the years fit; tilted, only every other name has room
+const NARROW=innerWidth<640;
+let IX=null,ixNear=false,ixAsked=false,curIx=NARROW?"top":"tilt";
 function ixData(){
   const I=Indicators.INDICES,first=SCORES.findIndex(Number.isFinite),ms=[],sum=I.map(()=>[]),cnt=I.map(()=>[]);
   for(let i=first;first>=0&&i<COMP.date.length;i++){
@@ -565,7 +568,7 @@ function ixLoad(){
   if(ixAsked||!ixNear||!COMP)return;ixAsked=true;
   v3Load("ix",V=>{const I=Indicators.INDICES,{ms,C,v}=ixData();
     IX=v3Mount("ix",V,"bars",{rows:I.map(short),cols:ms.map(m=>m.endsWith("-01")?m.slice(0,4):""),v,z:v.map(s=>Number.isFinite(s)?band(s):"none"),marks:[],
-      size:[innerWidth<640?15:24,9] /* ponytail: phones get a narrower field, chosen once at mount; turning the phone keeps it */,fill:[1,.5],height:2,views:{tilt:[.95,.4],top:[1.52,0]},view:curIx,
+      size:NARROW?[13,11]:[24,9],fill:[1,.5],height:2,views:{tilt:[.95,.4],top:[1.52,0]},view:curIx,
       tipText:k=>{const l=L(),s=v[k];return l.ixTip(short(I[Math.floor(k/C)]),ms[k%C],Math.round(s),l.zone[BZ[band(s)]]);}});});
 }
 
