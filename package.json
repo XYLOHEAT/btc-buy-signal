@@ -16,6 +16,7 @@
   "devDependencies": {
     "@stylexjs/stylex": "^0.19.1",
     "@stylexjs/unplugin": "^0.19.1",
-    "esbuild": "^0.28.2"
+    "esbuild": "^0.28.2",
+    "three": "^0.186.1"
   }
 }

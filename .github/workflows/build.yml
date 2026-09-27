@@ -1,10 +1,10 @@
 name: Build check
-# The site is served exactly as committed: app.js and index.html's <style id="stylex"> are generated from src/
-# by build.mjs (ADR-021). This fails when they weren't rebuilt after a change, before a stale page ships.
+# The site is served exactly as committed: app.js, helix.js and index.html's <style id="stylex"> are generated
+# from src/ by build.mjs (ADR-021, ADR-022). This fails when they weren't rebuilt after a change, before a stale page ships.
 on:
   push:
     branches: [main]
-    paths: ["src/**", "build.mjs", "package.json", "package-lock.json", "app.js", "index.html"]
+    paths: ["src/**", "build.mjs", "package.json", "package-lock.json", "app.js", "helix.js", "index.html"]
   pull_request:
     branches: [main]
 permissions:
@@ -21,4 +21,4 @@ jobs:
       - run: npm ci
       - run: npm run build
       - name: Committed build output is current
-        run: git diff --exit-code -- app.js index.html || { echo "::error::Run 'npm run build' and commit app.js + index.html"; exit 1; }
+        run: git diff --exit-code -- app.js helix.js index.html || { echo "::error::Run 'npm run build' and commit app.js, helix.js and index.html"; exit 1; }

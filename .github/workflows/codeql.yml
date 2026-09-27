@@ -30,10 +30,11 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           queries: security-extended
-          # app.js is the minified build of src/ (ADR-021): analyse the source once, not its bundle
+          # app.js and helix.js are minified builds of src/ (ADR-021, ADR-022): analyse the source, not the bundles
           config: |
             paths-ignore:
               - app.js
+              - helix.js
       - name: Analyze
         uses: github/codeql-action/analyze@dd903d2e4f5405488e5ef1422510ee31c8b32357 # v3.36.2
         with:

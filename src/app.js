@@ -49,9 +49,17 @@ const T={
   lg:{btc:"BTC (สีเขียว = วันที่ถูกมาก)",w200:"เฉลี่ย 200 สัปดาห์",d200:"เฉลี่ย 200 วัน",rp:"ต้นทุนเฉลี่ยตลาด",score:"คะแนน",ma111:"เฉลี่ย 111 วัน",ma350:"2× เฉลี่ย 350 วัน"},
   secCyc:"ตอนนี้คล้ายช่วงไหนในอดีต", cycCols:["ช่วงที่คล้าย","คล้าย","อีก 90 วัน","อีก 1 ปี"],
   cycNote:"เทียบรูปร่างและระดับของคะแนน 90 วันล่าสุดกับทุกช่วงในอดีต (ไม่นับปีล่าสุด) · คล้ายกันไม่ได้แปลว่าราคาจะเดินซ้ำ",
+  secHx:"เกลียวรอบ halving · ราคาทุกวันพันเป็นเกลียว หนึ่งรอบต่อหนึ่งช่วง halving ช่วงเดียวกันของทุกรอบจึงอยู่แนวเดียวกัน",
+  hxV:["เอียง","มองจากบน","มองด้านข้าง"], hxNow:"วันนี้", hxNone:"ก่อนมีคะแนน", hxSpokes:["halving","+1 ปี","+2 ปี","+3 ปี"],
+  hxCap:(pk,yr,cur,now,d)=>`${pk.length} รอบก่อนราคาทำยอดที่ ${list(pk)} ของรอบ (${yr} ปีหลัง halving) รอบนี้ยอดสูงสุดจนถึงตอนนี้อยู่ที่ ${cur} และวันนี้อยู่ที่ <b>${now}</b> ของรอบ (${d} วันหลัง halving) · รอบก่อนไม่รับประกันรอบนี้`,
+  hxTip:(d,p,z,f)=>`${d} · ${p} · ${z} · ${f}% ของรอบ`,
+  hxHint:"ลากเพื่อหมุน หรือใช้ปุ่มลูกศร · ชี้หรือแตะเส้นเพื่อดูวันที่และราคา",
+  hxAria:"กราฟ 3 มิติ: ราคา BTC ทุกวันพันเป็นเกลียว หนึ่งรอบต่อหนึ่งช่วง halving ใช้ปุ่มลูกศรเพื่อหมุน",
+  hxFail:"เบราว์เซอร์นี้แสดงภาพ 3 มิติไม่ได้ ข้อสรุปอยู่ด้านบน",
+  hxNote:n=>`หนึ่งรอบคือจาก halving หนึ่งถึงครั้งถัดไป (ราว 4 ปี) มุมรอบแกนบอกว่าวันนั้นอยู่ช่วงไหนของรอบ ระยะจากแกนคือราคา (สเกล log แต่ละวงห่างกัน 100 เท่า) และความสูงคือเวลา · สีคือระดับคะแนนของวันนั้น ช่วงปีแรก ๆ ที่ข้อมูลยังไม่พอคำนวณคะแนนเป็นสีเทา · halving ครั้งหน้าประมาณจากความยาวของรอบล่าสุด (${n}) · รอบแรกเริ่มจากบล็อกแรกในปี 2009 ไม่ใช่ halving จึงไม่นับในการเทียบยอด · ยอดของรอบคือราคาสูงสุดที่หลังจากนั้นราคาร่วงลงอย่างน้อยครึ่งหนึ่งก่อนจะกลับไปผ่านได้ ไม่ใช่แค่ราคาสูงสุดในรอบ (มี.ค. 2024 สูงกว่ายอดปี 2021 แต่ไม่ได้ร่วงตามมา)`,
   secHm:"คะแนนรายเดือน · แต่ละช่องคือระดับเฉลี่ยของเดือนนั้น",
   hvL:"เดือนที่เกิด halving (รางวัลการขุดลดลงครึ่งหนึ่ง)", hvShort:"halving", year:"ปี",
-  grp:["เลือกกราฟ","ช่วงเวลาของกราฟ","ดูราคาหลังจากนั้น","ปีที่เริ่มจำลอง"], sumBtc:"ราคา BTC", chartFail:"โหลดกราฟไม่สำเร็จ สรุปข้อมูลแทน: ",
+  grp:["เลือกกราฟ","ช่วงเวลาของกราฟ","ดูราคาหลังจากนั้น","ปีที่เริ่มจำลอง","มุมมอง"], sumBtc:"ราคา BTC", chartFail:"โหลดกราฟไม่สำเร็จ สรุปข้อมูลแทน: ",
   chartSum:(n,d0,d1,v0,v1,lo,dlo,hi,dhi)=>`${n} ${d0} ถึง ${d1}: เริ่ม ${v0} ล่าสุด ${v1} · ต่ำสุด ${lo} (${dlo}) · สูงสุด ${hi} (${dhi})`,
   info:t=>`เกี่ยวกับ ${t}`, weight:w=>`นับน้ำหนัก ${w} เท่าในคะแนนรวม`,
   themeToDark:"เปลี่ยนเป็นโหมดมืด", themeToLight:"เปลี่ยนเป็นโหมดสว่าง", refresh:"อัปเดตราคาสด", lang:"Switch to English",
@@ -95,9 +103,17 @@ const T={
   lg:{btc:"BTC (green = very cheap days)",w200:"200-week avg",d200:"200-day avg",rp:"Market cost basis",score:"Score",ma111:"111-day avg",ma350:"2× 350-day avg"},
   secCyc:"Past periods most like now", cycCols:["Similar period","Match","90 days later","1 year later"],
   cycNote:"Compares the shape and level of the last 90 days of the score with every past period (excluding the latest year) · similar doesn't mean price will repeat",
+  secHx:"Halving spiral · every day's price wound into a spiral, one turn per halving cycle, so the same stage of every cycle lines up",
+  hxV:["Tilted","From above","From the side"], hxNow:"Today", hxNone:"Before the score", hxSpokes:["Halving","+1 yr","+2 yr","+3 yr"],
+  hxCap:(pk,yr,cur,now,d)=>`The last ${pk.length} cycles peaked ${list(pk)} of the way through (${yr} years after the halving), and this one's high so far came at ${cur}. Today is <b>${now}</b> through, ${d} days in · past cycles don't guarantee this one`,
+  hxTip:(d,p,z,f)=>`${d} · ${p} · ${z} · ${f}% through its cycle`,
+  hxHint:"Drag to turn, or use the arrow keys · point at or tap the line for the date and price",
+  hxAria:"3D chart: every day's BTC price wound into a spiral, one turn per halving cycle. The arrow keys turn it.",
+  hxFail:"This browser can't show the 3D view. The summary is above.",
+  hxNote:n=>`One turn runs from one halving to the next (about 4 years). The angle is how far into its cycle a day falls, the distance from the centre is the price (log scale: each ring is 100× the one inside it) and height is time · color is that day's score level; the early years, before there's enough history for a score, are grey · the next halving is estimated from the length of the last cycle (${n}) · the first turn starts at the first block in 2009, not at a halving, so it isn't counted in the peaks · a cycle's peak is its highest price that later fell by at least half before being passed again, not simply its highest price (March 2024 topped 2021 but wasn't followed by a fall)`,
   secHm:"Monthly score · each cell is that month's average level",
   hvL:"Halving month (the mining reward is cut in half)", hvShort:"Halving", year:"Year",
-  grp:["Chart","Chart range","Price change after","Simulation start"], sumBtc:"BTC price", chartFail:"The chart couldn't load. In short: ",
+  grp:["Chart","Chart range","Price change after","Simulation start","View"], sumBtc:"BTC price", chartFail:"The chart couldn't load. In short: ",
   chartSum:(n,d0,d1,v0,v1,lo,dlo,hi,dhi)=>`${n} from ${d0} to ${d1}: started at ${v0}, latest ${v1} · low ${lo} (${dlo}) · high ${hi} (${dhi})`,
   info:t=>`About ${t}`, weight:w=>`Counts ${w}× in the overall score`,
   themeToDark:"Switch to dark mode", themeToLight:"Switch to light mode", refresh:"Refresh live price", lang:"เปลี่ยนเป็นภาษาไทย",
@@ -123,6 +139,8 @@ const band=s=>s>=75?"good":s>=55?"ok":s>=40?"neutral":s>=25?"warn":"bad";
 const scoreVar=s=>`var(--z-${band(s)})`;
 const usd=v=>"$"+Math.round(v).toLocaleString("en-US");
 const neg=s=>String(s).replace(/^-/,"−"); // a true minus sign, like every other figure on the page
+const usdP=v=>v<10?"$"+v.toPrecision(2):usd(v); // 2010's $0.086 stays readable
+const list=a=>new Intl.ListFormat(LANG==="th"?"th":"en-GB",{type:"conjunction"}).format(a); // "a, b and c"
 const nuplPhase=v=>L().nuplPh[v<0?0:v<0.25?1:v<0.5?2:v<0.75?3:4];
 /* escape any data-sourced string before it enters innerHTML (defense-in-depth vs upstream tampering) */
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -218,20 +236,26 @@ function applyStaticLang(){const l=L();
   document.getElementById("dca-note").innerHTML=l.dcaNote;
   head("lbl-cyc",l.secCyc);
   document.getElementById("cyc-note").innerHTML=l.cycNote;
+  head("lbl-hx",l.secHx);
+  document.getElementById("hx-note").innerHTML=l.hxNote(new Intl.DateTimeFormat(LANG==="th"?"th-TH-u-ca-gregory":"en-GB",{month:"short",year:"numeric",timeZone:"UTC"}).format(CYC[CYC.length-1]));
+  document.getElementById("hxHint").textContent=l.hxHint;document.getElementById("hxFail").textContent=l.hxFail;
+  document.getElementById("hxCanvas").setAttribute("aria-label",l.hxAria);
+  document.getElementById("hxKey").innerHTML=[...Object.keys(BZ).map(k=>[`var(--z-${k})`,l.zone[BZ[k]]]),["var(--faint)",l.hxNone]]
+    .map(([c,t])=>`<span class="${x(sx.keyItem)}"><i class="${x(sx.hxSwatch)}" style="background-color:${c}"></i>${t}</span>`).join("");
   head("lbl-hm",l.secHm);
   document.getElementById("hmKey").innerHTML=Object.keys(BZ).map(k=>`<span class="${x(sx.keyItem)}"><i ${cellAttrs(k,false,sx.swatch)}></i>${l.zone[BZ[k]]}</span>`).join("")+
     `<span class="${x(sx.keyItem)}"><i class="${x(sx.swatch,sx.hv)}" style="background-color:var(--faint)"></i>${l.hvL}</span>`;
   document.getElementById("foot").innerHTML=l.foot;
   document.getElementById("s-rp-l").textContent=l.rpL;document.getElementById("s-nupl-l").textContent=l.nuplL;
   document.getElementById("retry").textContent=l.retry;
-  ["tabs","ranges","bth","dcaRange"].forEach((id,i)=>document.getElementById(id).setAttribute("aria-label",l.grp[i]));
+  ["tabs","ranges","bth","dcaRange","hxViews"].forEach((id,i)=>document.getElementById(id).setAttribute("aria-label",l.grp[i]));
   buildOpts();
   if(!SNAP){renderRows();skLoad();document.getElementById("gaugeSvg").setAttribute("aria-label",l.loading);}
   if(lastErr)showErr(lastT);
   const lb=document.getElementById("langBtn");lb.textContent=LANG==="th"?"EN":"ไทย";lb.title=l.lang;
   document.getElementById("refresh").setAttribute("aria-label",l.refresh);themeBtnSync();
   document.getElementById("ins-disc").textContent=l.disc;
-  for(const k of ["bt","dca","cyc"])document.getElementById(k+"-note-s").textContent=l.method;
+  for(const k of ["bt","dca","cyc","hx"])document.getElementById(k+"-note-s").textContent=l.method;
 }
 function setLang(lg){LANG=lg;localStorage.setItem("lang",lg);applyStaticLang();if(COMP&&SNAP)render(lastT);}
 
@@ -262,7 +286,7 @@ function render(t){
   document.getElementById("ins-dca").textContent=l.dca(SNAP.overall)+(SNAP.overall>=40&&riskKey!=="low"?l.dcaWeak:"");
   const w200=COMP.ma200w[SNAP.idx];document.getElementById("ins-inval").textContent=l.inval(w200?Math.round(w200).toLocaleString("en-US"):"–");
 
-  renderRows();drawChart();renderBacktest();renderDca();renderCycle();renderHeatmap();
+  renderRows();drawChart();renderBacktest();renderDca();renderCycle();renderHelix();renderHeatmap();
   document.getElementById("app").dataset.phase="ready";skSave();
 }
 /* skeleton sizes: text wraps differently on every width, so each slot's real height is remembered per
@@ -305,6 +329,7 @@ function buildOpts(){const l=L();
   opts("ranges",[[l.ranges[0],365],[l.ranges[1],1460],[l.all,99999]],curRange,n=>{curRange=n;if(COMP)drawChart();});
   opts("bth",l.hz.map((la,i)=>[la,[30,90,180,365][i]]),curH,n=>{curH=n;if(COMP)renderBacktest();});
   opts("dcaRange",[["2016","2016-01-01"],["2018","2018-01-01"],["2020","2020-01-01"],["2022","2022-01-01"],[l.all,null]],curDcaStart,st=>{curDcaStart=st;if(COMP)renderDca();});
+  opts("hxViews",l.hxV.map((la,i)=>[la,["tilt","top","side"][i]]),curView,v=>{curView=v;if(HX)HX.view(v);});
 }
 
 /* .tbl: header row, then rows of [label, ...values]. Each value cell carries its column name for the stacked layout */
@@ -355,6 +380,52 @@ function renderHeatmap(){
   }
   hm.innerHTML=html;tb.innerHTML=sr+"</tr>";
 }
+
+/* ---- halving helix (ADR-022). This side keeps the data, the words and the colors; three.js lives in /helix.js,
+   loaded once the section nears the viewport and COMP exists ---- */
+const CYC=[Date.parse("2009-01-03"),...HALVINGS.map(d=>Date.parse(d))]; // the first block, then each halving
+CYC.push(2*CYC[CYC.length-1]-CYC[CYC.length-2]); // the next halving, estimated: the last cycle's length again
+let HX=null,hxNear=false,hxAsked=false,curView="tilt";
+/* every priced day: its cycle + fraction (turn), price, zone; where each halving's cycle starts (marks); each
+   cycle's high so far (hi) and its top (top): the highest price that later halved before being passed again.
+   A plain maximum would crown March 2024, a month before the halving, instead of the 2021 top */
+function helixData(){
+  const h={turn:[],p:[],z:[],d:[],marks:[],hi:[],top:[],c:0},P=COMP.price;
+  for(let i=0;i<COMP.date.length;i++){
+    const px=P[i];if(!(px>0))continue;
+    const t=Date.parse(COMP.date[i]),k=h.p.length;
+    while(h.c<CYC.length-2&&t>=CYC[h.c+1]){h.c++;if(k)h.marks.push(k);}
+    h.turn.push(h.c+(t-CYC[h.c])/(CYC[h.c+1]-CYC[h.c]));h.p.push(px);h.d.push(COMP.date[i]);h.z.push(Number.isFinite(SCORES[i])?band(SCORES[i]):"none");
+    if(h.hi[h.c]===undefined||px>h.p[h.hi[h.c]]){h.hi[h.c]=k;
+      for(let j=i+1;j<P.length&&!(P[j]>px);j++)if(P[j]<=px/2){h.top[h.c]=k;break;}}
+  }
+  return h;
+}
+const hxColors=()=>({...Object.fromEntries(Object.keys(BZ).map(k=>[k,tok("z-"+k)])),none:tok("faint")});
+const hxGrid=()=>({soft:tok("line"),strong:tok("faint")});
+const hxText=()=>({rings:["$1","$100","$10k","$1M"],spokes:L().hxSpokes,years:HALVINGS.map(d=>d.slice(0,4)),now:L().hxNow});
+/* the caption: where the finished cycles (halving to halving) peaked, this cycle's high so far, and today */
+function renderHelix(){
+  const l=L(),h=helixData(),c=h.c,last=h.turn.length-1,pc=k=>Math.round(h.turn[k]%1*100)+"%";
+  const since=k=>Date.parse(h.d[k])-CYC[Math.floor(h.turn[k])]; // ms from the cycle's halving
+  const done=h.top.slice(1,c).filter(k=>k!==undefined),yrs=done.map(k=>since(k)/(365.25*864e5)),[a,b]=[Math.min(...yrs),Math.max(...yrs)].map(v=>v.toFixed(1));
+  document.getElementById("hxCap").innerHTML=done.length?l.hxCap(done.map(pc),a===b?a:a+"–"+b,pc(h.hi[c]),pc(last),Math.round(since(last)/864e5)):"";
+  if(HX){HX.setTheme(hxColors(),hxGrid());HX.setText(hxText());}else helixLoad();
+}
+function helixLoad(){
+  if(hxAsked||!hxNear||!COMP)return;hxAsked=true;
+  const s=document.createElement("script");s.src="helix.js?v=1";
+  s.onload=()=>{const h=helixData();
+    try{HX=window.BTCHelix({canvas:document.getElementById("hxCanvas"),layer:document.getElementById("hxLayer"),tip:document.getElementById("hxTip"),
+      cls:{label:x(sx.hxLabel),year:x(sx.hxLabel,sx.hxYear),now:x(sx.hxLabel,sx.hxNow),dot:x(sx.hxDot)},
+      turn:h.turn,p:h.p,z:h.z,marks:h.marks,view:curView,palette:hxColors(),grid:hxGrid(),text:hxText(),
+      tipText:i=>{const l=L();return l.hxTip(h.d[i],usdP(h.p[i]),h.z[i]==="none"?l.hxNone:l.zone[BZ[h.z[i]]],Math.round(h.turn[i]%1*100));}});}
+    catch(e){HX=null;}
+    if(!HX)helixFail();};
+  s.onerror=helixFail;document.head.appendChild(s);
+}
+/* no WebGL, or the bundle didn't load: say so in the box; the caption above still carries the finding */
+function helixFail(){for(const id of ["hxCanvas","hxViews","hxHint","hxKey"])document.getElementById(id).hidden=true;document.getElementById("hxFail").hidden=false;}
 
 const pct=x=>(x>=0?"+":"−")+Math.abs(x*100).toFixed(0)+"%";
 const zInText=k=>LANG==="en"?L().zone[k].toLowerCase():L().zone[k];
@@ -489,6 +560,21 @@ const shell=()=>`
     ${method("cyc")}
   </section>
   <section>
+    <h2 class="${x(sx.lbl)}" id="lbl-hx"></h2>
+    <div class="${x(sx.opts,sx.btH)}" id="hxViews" role="group"></div>
+    <div class="${x(sx.btHead,sx.sk,sx.skText,sx.hHxCap)}" id="hxCap" data-sk></div>
+    <!-- helix.js draws into the canvas and pins its labels in the layer -->
+    <div class="${x(sx.hxBox,sx.skChart)}" id="hxBox">
+      <canvas class="${x(sx.hxCanvas)}" id="hxCanvas" role="img" tabindex="0" aria-describedby="hxCap"></canvas>
+      <div class="${x(sx.hxLayer)}" id="hxLayer" aria-hidden="true"></div>
+      <div class="${x(sx.hxTip)}" id="hxTip" aria-hidden="true" hidden></div>
+      <p class="${x(sx.chartFail)}" id="hxFail" hidden></p>
+    </div>
+    <div class="${x(sx.hxHint)}" id="hxHint"></div>
+    <div class="${x(sx.hmKey)}" id="hxKey" aria-hidden="true"></div>
+    ${method("hx")}
+  </section>
+  <section>
     <h2 class="${x(sx.lbl)}" id="lbl-hm"></h2>
     <!-- the grid is visual only; screen readers get the same months as a table -->
     <div class="${x(sx.hm,sx.sk,sx.skHm,sx.hHm)}" id="hm" aria-hidden="true" data-sk></div>
@@ -509,6 +595,7 @@ const cjs=document.getElementById("chartjs");
 cjs.addEventListener("load",()=>{if(COMP)drawChart();});
 cjs.addEventListener("error",()=>{CHART_FAIL=true;if(COMP)drawChart();});
 applyStaticLang();document.getElementById("app").hidden=false; // shown once labelled: no frame of empty headings
+new IntersectionObserver((es,io)=>{if(es.some(e=>e.isIntersecting)){io.disconnect();hxNear=true;helixLoad();}},{rootMargin:"600px 0px"}).observe(document.getElementById("hxBox"));
 document.getElementById("themeBtn").onclick=toggleTheme;
 document.getElementById("langBtn").onclick=()=>setLang(LANG==="th"?"en":"th");
 document.getElementById("refresh").onclick=()=>load();
