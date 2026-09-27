@@ -250,29 +250,41 @@ export const sx = stylex.create({
   keyItem: { display: "inline-flex", alignItems: "center", gap: space.sm },
   swatch: { position: "relative", flex: "0 0 auto", width: "var(--c)", height: "var(--c)", borderRadius: 1 }, // swatch = cell size
 
-  /* ---------- halving helix (ADR-022): a WebGL canvas with HTML labels over it, drawn by /helix.js. Until it
+  /* ---------- 3D views (ADR-022, ADR-023): a WebGL canvas with HTML labels over it, drawn by /viz3d.js. Until it
      loads the box keeps its size; without WebGL it says so where the canvas would be ---------- */
-  hxBox: { position: "relative", height: { default: 340, [mq.tablet]: 420, [mq.desktop]: 460 }, overflow: "hidden", userSelect: "none", WebkitUserSelect: "none" },
-  // a vertical swipe scrolls the page, a sideways one turns the helix; it fades in once drawn
-  hxCanvas: {
+  v3Box: { position: "relative", overflow: "hidden", userSelect: "none", WebkitUserSelect: "none" },
+  v3Hx: { height: { default: 340, [mq.tablet]: 420, [mq.desktop]: 460 } },
+  v3Hm: { height: { default: 300, [mq.tablet]: 380, [mq.desktop]: 400 }, marginTop: space.md },
+  v3Ix: { height: { default: 280, [mq.tablet]: 380, [mq.desktop]: 420 } },
+  // a vertical swipe scrolls the page, a sideways one turns the view; it fades in once drawn
+  v3Canvas: {
     display: "block", width: "100%", height: "100%", touchAction: "pan-y pinch-zoom",
     cursor: { default: "grab", ":active": "grabbing" },
     opacity: { default: 0, ":is([data-ready])": 1 },
     transition: { default: "opacity .6s cubic-bezier(.25,1,.5,1)", [mq.reduce]: "none" },
     outlineOffset: { default: null, ":focus-visible": "-2.5px" }, // inside the box, which clips
   },
-  hxLayer: { position: "absolute", inset: 0, pointerEvents: "none" },
-  // a halo in the page color keeps a label readable where the line runs under it, without hiding the line
-  hxLabel: { position: "absolute", left: 0, top: 0, fontSize: text.caption, lineHeight: 1, color: "var(--faint)", whiteSpace: "nowrap", textShadow: "0 0 2px var(--bg), 0 0 4px var(--bg), 0 0 6px var(--bg)" },
-  hxYear: { fontWeight: 600, color: "var(--muted)" },
-  hxNow: { fontWeight: 600, color: "var(--ink)" },
-  hxDot: { position: "absolute", left: 0, top: 0, width: 9, height: 9, margin: -4.5, borderRadius: "50%", backgroundColor: "var(--ink)", boxShadow: "0 0 0 2px var(--bg)" },
-  hxTip: {
+  v3Layer: { position: "absolute", inset: 0, pointerEvents: "none" },
+  // a halo in the page color keeps a label readable where a line runs under it, without hiding the line
+  v3Label: { position: "absolute", left: 0, top: 0, fontSize: text.caption, lineHeight: 1, color: "var(--faint)", whiteSpace: "nowrap", textShadow: "0 0 2px var(--bg), 0 0 4px var(--bg), 0 0 6px var(--bg)" },
+  v3Strong: { fontWeight: 600, color: "var(--muted)" },
+  v3Now: { fontWeight: 600, color: "var(--ink)" },
+  v3Dot: { position: "absolute", left: 0, top: 0, width: 9, height: 9, margin: -4.5, borderRadius: "50%", backgroundColor: "var(--ink)", boxShadow: "0 0 0 2px var(--bg)" },
+  v3Mark: { position: "absolute", left: 0, top: 0, width: 5, height: 5, margin: -2.5, borderRadius: "50%", backgroundColor: "var(--bg)" }, // a halving month, as in the 2D grid
+  v3Tip: {
     position: "absolute", left: 0, top: 0, pointerEvents: "none", whiteSpace: "nowrap",
     fontSize: text.caption, lineHeight: 1.4, color: "var(--ink)", backgroundColor: "var(--surface)", ...FRAME, paddingBlock: space.xs, paddingInline: space.sm,
   },
-  hxHint: { marginTop: space.sm, fontSize: text.caption, color: "var(--faint)" },
-  hxSwatch: { flex: "0 0 auto", width: 14, height: 3 }, // a piece of the line
+  v3Hint: { marginTop: space.sm, fontSize: text.caption, color: "var(--faint)" },
+  v3Swatch: { flex: "0 0 auto", width: 14, height: 3 }, // a piece of the spiral's line
+  // a similar period's date: a button that shows it on the spiral. Its padding fills the cell, so the target is the row's height
+  cycBtn: {
+    backgroundColor: "transparent", borderStyle: "none", paddingInline: 0, paddingBlock: space.md, marginBlock: `calc(-1 * ${space.md})`,
+    fontWeight: "inherit", textAlign: "start", cursor: "pointer",
+    textDecorationLine: "underline", textDecorationStyle: "dotted", textUnderlineOffset: 3,
+    textDecorationColor: { default: "var(--faint)", ":hover": HOVER },
+  },
+  hmLink: { cursor: { default: null, [mq.hover]: "pointer" } }, // a heatmap month: a click shows it on the spiral
 
   foot: { marginTop: space.x3, paddingTop: space.lg, ...RULE_TOP, fontSize: text.caption, lineHeight: 1.7, color: "var(--muted)", textWrap: "pretty" },
 
@@ -312,4 +324,5 @@ export const sx = stylex.create({
   hCyc: { "--h": { default: "11.8rem", [mq.phone]: { default: null, ":lang(en)": "13.1rem" } }, "--p": "2.95rem" },
   hHm: { "--h": { default: "15.4rem", [mq.tablet]: "18.6rem" } },
   hHxCap: { "--h": { default: "4lh", [mq.phone]: { default: null, ":lang(en)": "5lh" }, [mq.tablet]: { default: "3lh", ":lang(th)": "2lh" }, [mq.desktop]: "3lh" } },
+  hIxCap: { "--h": { default: "5lh", [mq.tablet]: "3lh" } },
 });
