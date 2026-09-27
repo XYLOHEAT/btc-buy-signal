@@ -12,6 +12,7 @@ Reframed as *accumulation/DCA guidance*, not a buy signal. Not financial advice.
 - **Backtest** (forward returns by zone), **DCA simulator** (signal-scaled vs flat), **cycle compare**, monthly **heatmap**, halving markers
 - **3D views** ([three.js](https://threejs.org)): the **halving spiral** (every day's price wound into a spiral, one turn per halving cycle, colored by the score; similar periods and heatmap months light up on it), the **heatmap in relief** (2D/3D switch), and **the six indices over time** (each index's monthly score as a terrain; from above, a heatmap). Drag or arrow keys to turn
 - Per-metric tooltips with score reading · light/dark toggle · TH/EN toggle (persisted)
+- **On this page**: a short table of contents under the verdict (a sticky bar on desktop that marks the section in view); every section has a shareable link (`#spiral`, `#monthly`, …)
 - **PWA** (installable, offline) · mobile-first + desktop two-column
 
 ## How it works

@@ -44,9 +44,11 @@ export const sx = stylex.create({
     paddingBottom: `calc(env(safe-area-inset-bottom) + ${space.x3})`,
     paddingLeft: "max(var(--gutter), env(safe-area-inset-left))",
   },
+  // desktop: the verdict column spans both rows; the table of contents sits over the evidence column (row 1)
   cols: {
     display: { default: "block", [mq.desktop]: "grid" },
     gridTemplateColumns: { default: null, [mq.desktop]: "25rem minmax(0, 1fr)" },
+    gridTemplateRows: { default: null, [mq.desktop]: "auto minmax(0, 1fr)" },
     columnGap: { default: null, [mq.desktop]: space.x4 },
     alignItems: { default: null, [mq.desktop]: "start" },
     marginTop: { default: null, [mq.desktop]: space.xs },
@@ -54,6 +56,7 @@ export const sx = stylex.create({
   // sections adapt to their column, not the window; on desktop the verdict column stays in view
   colA: {
     containerType: "inline-size", containerName: "cola",
+    gridRow: { default: null, [mq.desktop]: "1 / span 2" },
     position: { default: null, [mq.desktop]: "sticky" },
     top: { default: null, [mq.desktop]: space.lg },
     maxHeight: { default: null, [mq.desktop]: `calc(100dvh - 2 * ${space.lg})` },
@@ -62,7 +65,28 @@ export const sx = stylex.create({
     paddingRight: { default: null, [mq.desktop]: space.xs },
     "::-webkit-scrollbar": { display: "none" },
   },
-  colB: { containerType: "inline-size", containerName: "colb" },
+  colB: { containerType: "inline-size", containerName: "colb", gridColumn: { default: null, [mq.desktop]: 2 }, gridRow: { default: null, [mq.desktop]: 2 } },
+  // a jump lands with air above the heading; on desktop, clear of the sticky table of contents, whose real height
+  // (one row, or two on a narrow desktop) app.js keeps in --toc-h
+  anchor: { scrollMarginTop: { default: space.lg, [mq.desktop]: `calc(var(--toc-h, 3rem) + ${space.lg})` } },
+
+  /* ---------- on this page: the option-row look (muted, the current one in ink with an underline). Phones and
+     tablets: under the verdict. Desktop: a bar that sticks to the top of the evidence column ---------- */
+  toc: {
+    marginTop: { default: space.xl, [mq.desktop]: 0 },
+    gridColumn: { default: null, [mq.desktop]: 2 }, gridRow: { default: null, [mq.desktop]: 1 },
+    position: { default: null, [mq.desktop]: "sticky" }, top: 0, zIndex: { default: null, [mq.desktop]: 1 }, // above the charts and 3D boxes it slides over
+    backgroundColor: { default: null, [mq.desktop]: "var(--bg)" },
+    borderBottomWidth: { default: 0, [mq.desktop]: 1 }, borderBottomStyle: "solid", borderBottomColor: "var(--line)",
+  },
+  tocL: { fontSize: text.caption, fontWeight: 600, color: "var(--muted)", display: { default: null, [mq.desktop]: "none" } },
+  tocLinks: { display: "flex", flexWrap: "wrap", marginLeft: `calc(-1 * ${space.sm})` },
+  tocLink: {
+    position: "relative", display: "inline-flex", alignItems: "center", minHeight: 44, paddingInline: space.sm,
+    fontSize: text.ui, fontWeight: 600, textDecorationLine: "none", whiteSpace: "nowrap",
+    color: { default: "var(--muted)", ":is([aria-current=true])": "var(--ink)", ":hover": HOVER },
+    "::after": { content: { default: null, ":is([aria-current=true])": '""' }, position: "absolute", left: space.sm, right: space.sm, bottom: 0, borderBottomWidth: 1.5, borderBottomStyle: "solid", borderBottomColor: "var(--ink)" },
+  },
   sr: { position: "absolute", width: 1, height: 1, margin: -1, padding: 0, borderWidth: 0, overflow: "hidden", clipPath: "inset(50%)", whiteSpace: "nowrap" },
 
   /* ---------- masthead ---------- */

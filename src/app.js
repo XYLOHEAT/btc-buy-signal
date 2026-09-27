@@ -66,6 +66,7 @@ const T={
   ixAria:"กราฟ 3 มิติ: คะแนนรายเดือนของ 6 ดัชนี แถวละหนึ่งดัชนี ความสูงคือคะแนน ใช้ปุ่มลูกศรเพื่อหมุน",
   ixNote:"แต่ละแท่งคือคะแนนเฉลี่ย 0–100 ของดัชนีนั้นในเดือนนั้น ใช้เกณฑ์เดียวกับคะแนนรวม (ดู ⓘ ของแต่ละดัชนี) · เห็นตรงกัน คือทั้ง 6 ดัชนีได้ 75 ขึ้นไปในเดือนเดียวกัน · มองจากบนจะอ่านได้แบบ heatmap · ผลในอดีตไม่รับประกันอนาคต",
   hxNote:n=>`หนึ่งรอบคือจาก halving หนึ่งถึงครั้งถัดไป (ราว 4 ปี) มุมรอบแกนบอกว่าวันนั้นอยู่ช่วงไหนของรอบ ระยะจากแกนคือราคา (สเกล log แต่ละวงห่างกัน 100 เท่า) และความสูงคือเวลา · สีคือระดับคะแนนของวันนั้น ช่วงปีแรก ๆ ที่ข้อมูลยังไม่พอคำนวณคะแนนเป็นสีเทา · halving ครั้งหน้าประมาณจากความยาวของรอบล่าสุด (${n}) · รอบแรกเริ่มจากบล็อกแรกในปี 2009 ไม่ใช่ halving จึงไม่นับในการเทียบยอด · ยอดของรอบคือราคาสูงสุดที่หลังจากนั้นราคาร่วงลงอย่างน้อยครึ่งหนึ่งก่อนจะกลับไปผ่านได้ ไม่ใช่แค่ราคาสูงสุดในรอบ (มี.ค. 2024 สูงกว่ายอดปี 2021 แต่ไม่ได้ร่วงตามมา)`,
+  tocL:"ในหน้านี้", toc:["ดัชนีรายตัว","กราฟ","ผลย้อนหลัง","DCA","ช่วงที่คล้าย","เกลียว","รายเดือน","ดัชนีย้อนหลัง"],
   secHm:"คะแนนรายเดือน · แต่ละช่องคือระดับเฉลี่ยของเดือนนั้น แตะช่องเพื่อดูเดือนนั้นบนเกลียว",
   hvL:"เดือนที่เกิด halving (รางวัลการขุดลดลงครึ่งหนึ่ง)", hvShort:"halving", year:"ปี",
   grp:["เลือกกราฟ","ช่วงเวลาของกราฟ","ดูราคาหลังจากนั้น","ปีที่เริ่มจำลอง","มุมมอง","แสดงเป็น","มุมมอง"], sumBtc:"ราคา BTC", chartFail:"โหลดกราฟไม่สำเร็จ สรุปข้อมูลแทน: ",
@@ -129,6 +130,7 @@ const T={
   ixAria:"3D chart: each of the six indices' monthly score, one row per index; height is the score. The arrow keys turn it.",
   ixNote:"Each bar is that index's average 0–100 score for the month, on the same scale as the overall score (see each index's ⓘ) · agree means all six scored 75 or more in the same month · from above it reads as a heatmap · past results don't guarantee the future",
   hxNote:n=>`One turn runs from one halving to the next (about 4 years). The angle is how far into its cycle a day falls, the distance from the centre is the price (log scale: each ring is 100× the one inside it) and height is time · color is that day's score level; the early years, before there's enough history for a score, are grey · the next halving is estimated from the length of the last cycle (${n}) · the first turn starts at the first block in 2009, not at a halving, so it isn't counted in the peaks · a cycle's peak is its highest price that later fell by at least half before being passed again, not simply its highest price (March 2024 topped 2021 but wasn't followed by a fall)`,
+  tocL:"On this page", toc:["Indices","Charts","Backtest","DCA","Similar periods","Spiral","Monthly","Index history"],
   secHm:"Monthly score · each cell is that month's average level; tap one to see it on the spiral",
   hvL:"Halving month (the mining reward is cut in half)", hvShort:"Halving", year:"Year",
   grp:["Chart","Chart range","Price change after","Simulation start","View","Show as","View"], sumBtc:"BTC price", chartFail:"The chart couldn't load. In short: ",
@@ -206,6 +208,7 @@ async function load(full){
     if(full||!RAW)await getRaw();
     await recompute(tp);
     lastErr=null;document.getElementById("err").hidden=true;
+    if(location.hash&&!load.landed){load.landed=true;const t=document.getElementById(location.hash.slice(1));if(t)t.scrollIntoView();} // a shared #section link, once the data has sized the page
     const l=L();announce(l.ready(Math.round(SNAP.overall),l.zone[SNAP.label],usd(SNAP.price))+(lastT?"":" "+l.priceOff));
   }catch(e){lastErr=e;showErr(await tp);}
   finally{busy=false;btns.forEach(b=>b.setAttribute("aria-disabled","false"));}
@@ -258,7 +261,8 @@ function applyStaticLang(){const l=L();
   document.getElementById("cyc-note").innerHTML=l.cycNote;
   head("lbl-hx",l.secHx);
   document.getElementById("hx-note").innerHTML=l.hxNote(monthYear(CYC[CYC.length-1]));
-  head("lbl-ix",l.secIx);document.getElementById("ix-note").innerHTML=l.ixNote;
+  head("lbl-ix",l.secIx);
+  document.getElementById("toc-l").textContent=l.tocL;[...document.getElementById("tocLinks").children].forEach((a,i)=>a.textContent=l.toc[i]);document.getElementById("ix-note").innerHTML=l.ixNote;
   for(const [k,hint,aria,fail] of [["hx",l.hxHint,l.hxAria,l.v3Fail],["hr",l.barHint,l.hmAria,l.hmFail],["ix",l.barHint,l.ixAria,l.v3Fail]]){
     document.getElementById(k+"Hint").textContent=hint;document.getElementById(k+"Canvas").setAttribute("aria-label",aria);document.getElementById(k+"Fail").textContent=fail;}
   document.getElementById("hxKey").innerHTML=zoneKey(sx.v3Swatch,true);document.getElementById("ixKey").innerHTML=zoneKey(sx.swatch);
@@ -610,6 +614,7 @@ function drawChart(){
 }
 
 /* ---------- shell: all markup lives here so every element gets its StyleX roles ---------- */
+const TOC=["indices","charts","backtest","dca","similar","spiral","monthly","index-history"]; // section ids, in page order
 const method=k=>`<details class="${x(sx.method)}"><summary class="${x(sx.summary)}" id="${k}-note-s"></summary><div class="${x(sx.note)}" id="${k}-note"></div></details>`;
 /* a fact: label with its ⓘ, value, and the note the ⓘ opens (full width, under the row) */
 const fact=(id,wrap)=>`<div class="${x(sx.fact)}"${wrap?` id="${id}-wrap"`:""}><dt class="${x(sx.factDt)}"><span id="${id}-l"></span><button class="${x(sx.infoBtn,sx.factBtn)}" id="${id}-b" aria-expanded="false">ⓘ</button></dt><dd class="${x(sx.factDd)}" id="${id}">–</dd><dd class="${x(sx.info,sx.factInfo)}" id="${id}-i" hidden></dd></div>`;
@@ -647,35 +652,40 @@ const shell=()=>`
   <p class="${x(sx.disc)}" id="ins-disc"></p>
   <dl class="${x(sx.facts)}">${fact("s-mom")}${fact("s-rp",1)}${fact("s-nupl",1)}</dl>
 </div>
+<!-- on this page: under the verdict on phones and tablets; on desktop a sticky bar over the evidence column -->
+<nav class="${x(sx.toc)}" aria-labelledby="toc-l"><div class="${x(sx.tocL)}" id="toc-l"></div>
+  <div class="${x(sx.tocLinks)}" id="tocLinks">${TOC.map(id=>`<a class="${x(sx.tocLink)}" href="#${id}"></a>`).join("")}</div></nav>
 <div class="${x(sx.colB)}">
-  <h2 class="${x(sx.lbl,sx.lblFirst)}" id="lbl-index"></h2>
-  <div class="${x(sx.rows)}" id="rows"></div>
-  <section>
+  <section class="${x(sx.anchor)}" id="indices">
+    <h2 class="${x(sx.lbl,sx.lblFirst)}" id="lbl-index"></h2>
+    <div class="${x(sx.rows)}" id="rows"></div>
+  </section>
+  <section class="${x(sx.anchor)}" id="charts">
     <h2 class="${x(sx.lbl)}" id="lbl-charts"></h2>
     <div class="${x(sx.tabs)}" id="tabs" role="group"></div>
     <div class="${x(sx.chartBox,sx.skChart)}"><canvas id="chart" role="img"></canvas><p class="${x(sx.chartFail)}" id="chartFail" hidden></p></div>
     <div class="${x(sx.opts,sx.ranges)}" id="ranges" role="group"></div>
   </section>
-  <section>
+  <section class="${x(sx.anchor)}" id="backtest">
     <h2 class="${x(sx.lbl)}" id="lbl-bt"></h2>
     <div class="${x(sx.opts,sx.btH)}" id="bth" role="group"></div>
     <div class="${x(sx.btHead,sx.sk,sx.skText,sx.hBthead)}" id="bthead" data-sk></div>
     <div class="${x(sx.btRows,sx.sk,sx.skRule,sx.hBt)}" id="bt" data-sk></div>
     ${method("bt")}
   </section>
-  <section>
+  <section class="${x(sx.anchor)}" id="dca">
     <h2 class="${x(sx.lbl)}" id="lbl-dca"></h2>
     <div class="${x(sx.opts,sx.btH)}" id="dcaRange" role="group"></div>
     <div class="${x(sx.btHead,sx.sk,sx.skText,sx.hDca)}" id="dcaHead" data-sk></div>
     <div class="${x(sx.tbl,sx.sk,sx.skRule,sx.hDcaGrid)}" id="dcaGrid" data-sk></div>
     ${method("dca")}
   </section>
-  <section>
+  <section class="${x(sx.anchor)}" id="similar">
     <h2 class="${x(sx.lbl)}" id="lbl-cyc"></h2>
     <div class="${x(sx.tbl,sx.sk,sx.skRule,sx.hCyc)}" id="cycRows" data-sk></div>
     ${method("cyc")}
   </section>
-  <section>
+  <section class="${x(sx.anchor)}" id="spiral">
     <h2 class="${x(sx.lbl)}" id="lbl-hx"></h2>
     <div class="${x(sx.opts,sx.btH)}" id="hxViews" role="group"></div>
     <div class="${x(sx.btHead,sx.sk,sx.skText,sx.hHxCap)}" id="hxCap" data-sk></div>
@@ -685,7 +695,7 @@ const shell=()=>`
     <div class="${x(sx.hmKey)}" id="hxKey" aria-hidden="true"></div>
     ${method("hx")}
   </section>
-  <section>
+  <section class="${x(sx.anchor)}" id="monthly">
     <h2 class="${x(sx.lbl)}" id="lbl-hm"></h2>
     <div class="${x(sx.opts,sx.btH)}" id="hmView" role="group"></div>
     <!-- the grid (and its relief) are visual only; screen readers get the same months as a table -->
@@ -695,7 +705,7 @@ const shell=()=>`
     <div class="${x(sx.sr)}"><table id="hmTbl" aria-labelledby="lbl-hm"></table></div><!-- wrapper: a table won't shrink to 1px and would widen the page -->
     <div class="${x(sx.hmKey)}" id="hmKey" aria-hidden="true"></div>
   </section>
-  <section>
+  <section class="${x(sx.anchor)}" id="index-history">
     <h2 class="${x(sx.lbl)}" id="lbl-ix"></h2>
     <div class="${x(sx.opts,sx.btH)}" id="ixViews" role="group"></div>
     <div class="${x(sx.btHead,sx.sk,sx.skText,sx.hIxCap)}" id="ixCap" data-sk></div>
@@ -718,6 +728,15 @@ const cjs=document.getElementById("chartjs");
 cjs.addEventListener("load",()=>{if(COMP)drawChart();});
 cjs.addEventListener("error",()=>{CHART_FAIL=true;if(COMP)drawChart();});
 applyStaticLang();document.getElementById("app").hidden=false; // shown once labelled: no frame of empty headings
+/* on this page: the first section (in page order) crossing the band 10-30% down the viewport is current; it shows
+   on desktop, where the bar sticks. Between sections the last one stays marked */
+const inBand=new Set(),tocIO=new IntersectionObserver(es=>{
+  for(const e of es)e.isIntersecting?inBand.add(e.target.id):inBand.delete(e.target.id);
+  const cur=TOC.find(id=>inBand.has(id));
+  if(cur)for(const a of document.getElementById("tocLinks").children)a.hash==="#"+cur?a.setAttribute("aria-current","true"):a.removeAttribute("aria-current");
+},{rootMargin:"-10% 0px -70% 0px"});
+for(const id of TOC)tocIO.observe(document.getElementById(id));
+const tocNav=document.querySelector("nav");new ResizeObserver(()=>document.documentElement.style.setProperty("--toc-h",tocNav.offsetHeight+"px")).observe(tocNav);
 near("hxBox",()=>{hxNear=true;helixLoad();});near("ixBox",()=>{ixNear=true;ixLoad();});
 // a similar period's date, or a heatmap month: show it on the spiral
 document.getElementById("cycRows").onclick=e=>{const b=e.target.closest("[data-w]");if(b)showOnHelix(...b.dataset.w.split(" "));};
