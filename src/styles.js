@@ -133,9 +133,13 @@ export const sx = stylex.create({
   planAct: { fontWeight: 600 }, // what to do: the one line to act on
   disc: { marginTop: space.md, marginBottom: 0, marginInline: 0, fontSize: text.caption, color: "var(--muted)" },
   facts: { marginTop: space.xl, ...RULE_TOP },
-  fact: { display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.md, paddingBlock: space.sm, ...SOFT_BOTTOM },
+  // label and value share the first line (a long value wraps inside its column); the ⓘ note spans the row below
+  fact: { display: "grid", gridTemplateColumns: "auto minmax(0, 1fr)", alignItems: "baseline", columnGap: space.md, paddingBlock: space.sm, ...SOFT_BOTTOM },
   factDt: { fontSize: text.ui, color: "var(--muted)" },
-  factDd: { fontWeight: 600, textAlign: "right" },
+  factDd: { fontWeight: 600, textAlign: "right", textWrap: "balance" },
+  // the ⓘ sits right after its label: a 44px target, pulled in so the row keeps its height
+  factBtn: { display: "inline-grid", verticalAlign: "middle", margin: "-12px -12px -12px -6px" },
+  factInfo: { gridColumn: "1 / -1", marginInline: 0, marginBottom: space.xs },
 
   /* ---------- section headings: real <h2>s; text after " · " becomes a quiet subtitle ---------- */
   lbl: { fontSize: text.subhead, fontWeight: 700, lineHeight: 1.3, color: "var(--ink)", marginTop: space.x3, marginBottom: space.md },

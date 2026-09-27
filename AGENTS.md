@@ -70,11 +70,11 @@ Always run this after touching `indicators.js`. Compare the score before and aft
 
 ## Common edits
 
-**Change an index's thresholds or weight** → `indicators.js`, the `INDICES` array (~line 166). Each entry has `weight`, `fmt(v)`, `score(v)` and `bands` (`{y, z: "good"|"bad", label}`: chart and sparkline reference lines, colored by the zone token); its words live in `src/app.js` `T` (`status`, `metric`, `read`). Changing a weight changes the headline score, the backtest, and the DCA sim — re-run the Node check and sanity-check the new score.
+**Change an index's thresholds or weight** → `indicators.js`, the `INDICES` array (~line 166). Each entry has `weight`, `fmt(v)`, `score(v)` and `bands` (`{y, z: "good"|"bad", label}`: chart and sparkline reference lines, colored by the zone token); its words live in `src/app.js` `T` (`mark`: a landmark note shown after the index's zone word, `metric`, `read`). Changing a weight changes the headline score, the backtest, and the DCA sim — re-run the Node check and sanity-check the new score.
 
-**Add a new index** → add a compute column in `computeAll()`, then an `INDICES` entry, then TH+EN strings in `src/app.js` `T` (`status`, `metric`, `read`). The UI loops over `INDICES`, so cards, tooltips and chart tabs appear automatically.
+**Add a new index** → add a compute column in `computeAll()`, then an `INDICES` entry, then TH+EN strings in `src/app.js` `T` (`mark`, `metric`, `read`). The UI loops over `INDICES`, so cards, tooltips and chart tabs appear automatically.
 
-**Edit any visible text** → `src/app.js`, the `T` object (line 12). Zone names are one vocabulary (`T.*.zone`, ADR-014): valuation words, never stance words; actions go in `T.*.dca`/`act`. No em dashes in copy. `T.th` and `T.en` are parallel; **add to both or the other language silently breaks**. Static labels are wired in `applyStaticLang()` (line 241); dynamic ones inside `render()` (line 276). Then `npm run build`.
+**Edit any visible text** → `src/app.js`, the `T` object (line 12). Zone names are one vocabulary (`T.*.zone`, ADR-014): valuation words, never stance words; an index's status is the zone word of its own score plus a `mark` note at landmarks (ADR-024); actions go in `T.*.dca`/`act`. No em dashes in copy. `T.th` and `T.en` are parallel; **add to both or the other language silently breaks**. Static labels are wired in `applyStaticLang()` (line 241); dynamic ones inside `render()` (line 276). Then `npm run build`.
 
 **Add a new data metric from bitcoin-data.com** → `build_data.py`, add a `bd_last("<endpoint>")` call into the `fresh` dict, then read `FRESH.<key>` in `src/app.js`. Keep the Action's total bitcoin-data calls in single digits.
 

@@ -32,7 +32,7 @@ const T={
   loading:"กำลังโหลดราคาและข้อมูล on-chain…", err:m=>`โหลดข้อมูลไม่สำเร็จ ตรวจสอบอินเทอร์เน็ตแล้วลองอีกครั้ง<small class="${x(sx.alertSmall)}">${m}</small>`, retry:"ลองอีกครั้ง",
   ready:(n,z,p)=>`อัปเดตแล้ว คะแนน ${n} จาก 100 ระดับ${z} ราคา ${p}`, noData:"ข้อมูลยังไม่พอสำหรับช่วงนี้",
   foot:`ต้นทุนเฉลี่ยตลาด: <a href="https://bitcoin-data.com" target="_blank" rel="noopener">bitcoin-data.com</a> (ช้าราว 7 วัน) · ประวัติ: <a href="https://github.com/coinmetrics/data" target="_blank" rel="noopener">Coin Metrics</a> (<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a>) · ราคา: Binance / Kraken / CoinGecko<br>ใช้ส่วนตัว ไม่เชิงพาณิชย์`,
-  status:{ahr999:v=>v<0.45?"ถูกมาก":v<=1.2?"โซน DCA":"แพง",mvrv_z:v=>v<0.1?"ใกล้ก้นรอบ":v<5?"กลาง ๆ":"ใกล้ยอดรอบ",wma_mult:v=>v<=1.05?"แตะเส้น 200 สัปดาห์":v<3?"ปกติ":"ร้อนแรง",pi_ratio:v=>v<0.7?"ไกลจากยอด":v>=0.95?"ใกล้ยอด":"กลาง ๆ",mayer:v=>v<1?"ถูก":v<2.4?"ปกติ":"ร้อนแรง",puell:v=>v<0.5?"ใกล้ก้นรอบ":v<4?"ปกติ":"ใกล้ยอดรอบ"},
+  mark:{mvrv_z:v=>v<=0?"ตลาดโดยรวมขาดทุน":v>=5?"ใกล้ระดับยอดรอบ":"",wma_mult:v=>v<=1.05?"แตะเส้น 200 สัปดาห์":v>=3?"3 เท่าของเส้นขึ้นไป":"",pi_ratio:v=>v>=0.95?"ใกล้สัญญาณยอดรอบ":v<0.7?"ไกลจากสัญญาณยอด":"",mayer:v=>v<1?"ใต้ค่าเฉลี่ย 200 วัน":v>=2.4?"2.4 เท่าของค่าเฉลี่ยขึ้นไป":"",puell:v=>v<0.5?"รายได้นักขุดตกหนัก":v>=4?"นักขุดกำไรสูงผิดปกติ":""},
   metric:{ahr999:"เทียบราคากับต้นทุนเฉลี่ยของการ DCA 200 วัน และกับเส้นราคาตามการเติบโตระยะยาว ยิ่งต่ำยิ่งถูก คิดจากราคาอย่างเดียว",
     mvrv_z:"มูลค่าตลาดเทียบกับต้นทุนรวมที่ทุกคนซื้อเหรียญมา ต่ำกว่า 0 คือตลาดโดยรวมขาดทุน มักใกล้ก้นรอบ เกิน 7 คือร้อนแรงเกิน มักใกล้ยอดรอบ แม่นกับรอบใหญ่",
     wma_mult:"ราคาหารด้วยค่าเฉลี่ย 200 สัปดาห์ (ราว 4 ปี) ใกล้ 1 คือแตะพื้นของรอบ ซึ่งเป็นจุดสะสมที่ดีในทุกรอบที่ผ่านมา ถ้าหลุดลงไปต่อเนื่อง แนวโน้มระยะยาวเปลี่ยน",
@@ -40,6 +40,9 @@ const T={
     mayer:"ราคาหารด้วยค่าเฉลี่ย 200 วัน ต่ำกว่า 1 คืออยู่ใต้ค่าเฉลี่ย (ถูก) เกิน 2.4 คือร้อนแรงเกิน",
     puell:"รายได้ต่อวันของนักขุดเทียบค่าเฉลี่ย 1 ปี ต่ำกว่า 0.5 คือรายได้ตกจนนักขุดต้องขายเหรียญ มักใกล้ก้นรอบ เกิน 4 คือกำไรสูงผิดปกติ มักใกล้ยอดรอบ"},
   read:{ahr999:"คะแนน: ≤0.45 ได้ 100 · 1.2 ได้ 50 · ≥4 ได้ 0",mvrv_z:"คะแนน: ≤0 ได้ 100 · ≥7 ได้ 0",wma_mult:"คะแนน: ≤1.0× ได้ 100 · ≥3× ได้ 0",pi_ratio:"คะแนน: ≤0.6 ได้ 100 · ≥1.0 ได้ 0",mayer:"คะแนน: ≤0.8 ได้ 100 · ≥2.4 ได้ 0",puell:"คะแนน: ≤0.5 ได้ 100 · ≥4 ได้ 0"},
+  momInfo:"ราคาเทียบกับค่าเฉลี่ย 200 วันและ 200 สัปดาห์ บอกทิศทางช่วงสั้น ไม่ได้อยู่ในคะแนนรวม ใช้ตัดสินว่าควรทยอยซื้อหรือไม่",
+  rpInfo:"ราคาเฉลี่ยที่เหรียญทุกเหรียญถูกซื้อครั้งล่าสุด (ราคาตอนที่เหรียญย้ายกระเป๋าครั้งสุดท้าย) ราคาต่ำกว่าเส้นนี้คือตลาดโดยรวมขาดทุน ข้อมูลช้าราว 7 วัน",
+  nuplInfo:"กำไรหรือขาดทุนที่ยังไม่ได้ขายของทั้งตลาด คิดเป็นสัดส่วนของมูลค่าตลาด (1 − ต้นทุนเฉลี่ยตลาด ÷ ราคา) ต่ำกว่า 0 คือตลาดโดยรวมขาดทุน ช่วงอารมณ์:",
   rpL:"ต้นทุนเฉลี่ยตลาด (realized price)",nuplL:"อารมณ์ตลาด (NUPL)",nuplPh:["ยอมแพ้","หวังปนกลัว","มองบวก","มั่นใจ","คลั่งไคล้"],
   secDca:"จำลอง DCA · ถ้าปรับจำนวนซื้อตามคะแนนนี้",
   dcaHead:(e,st)=>`เริ่มปี ${st} ถ้าปรับจำนวนซื้อตามคะแนน ต้นทุนเฉลี่ยต่อ BTC จะ<b style="color:var(--z-${e>=0?"good":"bad"})">${e>=0?"ต่ำกว่า":"สูงกว่า"} ${Math.abs(e).toFixed(1)}%</b> เทียบกับซื้อเท่ากันทุกครั้ง`,
@@ -92,7 +95,7 @@ const T={
   loading:"Loading price and on-chain data…", err:m=>`Couldn't load the data. Check your connection and try again.<small class="${x(sx.alertSmall)}">${m}</small>`, retry:"Try again",
   ready:(n,z,p)=>`Updated. Score ${n} of 100, ${z}, price ${p}.`, noData:"Not enough data for this yet",
   foot:`Market cost basis: <a href="https://bitcoin-data.com" target="_blank" rel="noopener">bitcoin-data.com</a> (about 7 days behind) · History: <a href="https://github.com/coinmetrics/data" target="_blank" rel="noopener">Coin Metrics</a> (<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a>) · Price: Binance / Kraken / CoinGecko<br>Personal, non-commercial`,
-  status:{ahr999:v=>v<0.45?"Very cheap":v<=1.2?"DCA zone":"Expensive",mvrv_z:v=>v<0.1?"Near cycle low":v<5?"Mid":"Near cycle top",wma_mult:v=>v<=1.05?"At the 200-week line":v<3?"Normal":"Hot",pi_ratio:v=>v<0.7?"Far from top":v>=0.95?"Near top":"Mid",mayer:v=>v<1?"Cheap":v<2.4?"Normal":"Hot",puell:v=>v<0.5?"Near cycle low":v<4?"Normal":"Near cycle top"},
+  mark:{mvrv_z:v=>v<=0?"market at a loss":v>=5?"near cycle-top levels":"",wma_mult:v=>v<=1.05?"at the 200-week line":v>=3?"3× the line or more":"",pi_ratio:v=>v>=0.95?"near the top signal":v<0.7?"far from the top signal":"",mayer:v=>v<1?"below the 200-day average":v>=2.4?"2.4× the average or more":"",puell:v=>v<0.5?"miner revenue collapsed":v>=4?"miner profits unusually high":""},
   metric:{ahr999:"Compares price with the average cost of a 200-day DCA and with a long-term growth curve. Lower is cheaper. Price-only.",
     mvrv_z:"Market value against what all holders paid for their coins. Below 0, the market as a whole is at a loss, usually near a cycle low. Above 7 it is overheated, usually near a top. Reliable on big cycles.",
     wma_mult:"Price divided by the 200-week (about 4-year) average. Near 1 is the cycle floor, a good accumulation point in every past cycle. A sustained break below it means the long-term trend has changed.",
@@ -100,6 +103,9 @@ const T={
     mayer:"Price divided by the 200-day average. Below 1 is under the average (cheap); above 2.4 is overheated.",
     puell:"Miners' daily revenue against its 1-year average. Below 0.5, revenue has collapsed and miners sell, usually near a cycle low. Above 4, profits are unusually high, usually near a top."},
   read:{ahr999:"Score: ≤0.45 gets 100 · 1.2 gets 50 · ≥4 gets 0",mvrv_z:"Score: ≤0 gets 100 · ≥7 gets 0",wma_mult:"Score: ≤1.0× gets 100 · ≥3× gets 0",pi_ratio:"Score: ≤0.6 gets 100 · ≥1.0 gets 0",mayer:"Score: ≤0.8 gets 100 · ≥2.4 gets 0",puell:"Score: ≤0.5 gets 100 · ≥4 gets 0"},
+  momInfo:"Price against its 200-day and 200-week averages: the short-term direction. It isn't part of the score; it decides whether to spread buys out.",
+  rpInfo:"The average price at which every coin last moved, roughly what holders paid. Price below it means the market as a whole is at a loss. About 7 days behind.",
+  nuplInfo:"The market's unrealized profit or loss as a share of its value (1 − cost basis ÷ price). Below 0 the market as a whole is at a loss. Phases:",
   rpL:"Market cost basis (realized price)",nuplL:"Market mood (NUPL)",nuplPh:["Capitulation","Hope / fear","Optimism","Belief","Euphoria"],
   secDca:"DCA simulator · if you had scaled buys by this score",
   dcaHead:(e,st)=>`Starting in ${st}, scaling buys by the score gives an average cost per BTC <b style="color:var(--z-${e>=0?"good":"bad"})">${Math.abs(e).toFixed(1)}% ${e>=0?"lower":"higher"}</b> than buying the same amount every time`,
@@ -261,6 +267,10 @@ function applyStaticLang(){const l=L();
     `<span class="${x(sx.keyItem)}"><i class="${x(sx.swatch,sx.hv)}" style="background-color:var(--faint)"></i>${l.hvL}</span>`;
   document.getElementById("foot").innerHTML=l.foot;
   document.getElementById("s-rp-l").textContent=l.rpL;document.getElementById("s-nupl-l").textContent=l.nuplL;
+  // each fact's ⓘ: the NUPL note lists its phases with the same cut-offs as nuplPhase()
+  const ph=["< 0","0–0.25","0.25–0.5","0.5–0.75","≥ 0.75"];
+  for(const [id,t,lab] of [["s-mom",l.momInfo,l.momL],["s-rp",l.rpInfo,l.rpL],["s-nupl",l.nuplInfo+" "+l.nuplPh.map((p,i)=>p+" "+ph[i]).join(" · "),l.nuplL]]){
+    document.getElementById(id+"-i").textContent=t;document.getElementById(id+"-b").setAttribute("aria-label",l.info(lab));}
   document.getElementById("retry").textContent=l.retry;
   ["tabs","ranges","bth","dcaRange","hxViews","hmView","ixViews"].forEach((id,i)=>document.getElementById(id).setAttribute("aria-label",l.grp[i]));
   buildOpts();
@@ -309,6 +319,9 @@ const skKey=()=>"sk:"+LANG+":"+innerWidth,remPx=()=>parseFloat(getComputedStyle(
 function skSave(){try{localStorage.setItem(skKey(),JSON.stringify(Object.fromEntries([...document.querySelectorAll("[data-sk]")].filter(e=>e.getClientRects().length).map(e=>[e.id,+(e.getBoundingClientRect().height/remPx()).toFixed(3)]))));}catch(e){}}
 function skLoad(){document.querySelectorAll("[data-sk]").forEach(e=>e.style.removeProperty("--h"));
   try{const h=JSON.parse(localStorage.getItem(skKey()))||{};for(const id in h){const e=document.getElementById(id);if(e)e.style.setProperty("--h",h[id]+"rem");}}catch(e){}}
+/* an index's status: the zone word of its own score (one vocabulary with the verdict), plus a plain note where the
+   value is a landmark (MVRV-Z at or below 0, the 200-week line, ...) */
+const status=(k,v,score)=>{const l=L(),m=l.mark[k]&&l.mark[k](v);return l.zone[BZ[band(score)]]+(m?" · "+m:"");};
 /* index rows. Before the data lands (no SNAP) the same rows show "–": names, weights and the ⓘ notes
    are static, so the list is its own skeleton and never jumps */
 function renderRows(){
@@ -317,7 +330,7 @@ function renderRows(){
     const v=SNAP?SNAP.values[s.key]:NaN,score=SNAP?SNAP.scores[s.key]:NaN,c=SNAP?`style="color:var(--z-${band(score)})"`:"";
     const el=document.createElement("div");el.className=x(sx.row);
     el.innerHTML=`<div class="${x(sx.nm)}">${s.title}</div><div class="${x(sx.val)}">${SNAP?neg(s.fmt(v)):"–"}</div>
-      <div class="${x(sx.meta)}"><span class="${x(sx.tier)}" title="${l.weight(s.weight)}">×${s.weight}</span><span class="${x(sx.st)}">${SNAP?l.status[s.key](v):"&nbsp;"}</span><button class="${x(sx.infoBtn)}" aria-label="${l.info(s.title)}" aria-expanded="false">ⓘ</button></div>
+      <div class="${x(sx.meta)}"><span class="${x(sx.tier)}" title="${l.weight(s.weight)}">×${s.weight}</span><span class="${x(sx.st)}">${SNAP?status(s.key,v,score):"&nbsp;"}</span><button class="${x(sx.infoBtn)}" aria-label="${l.info(s.title)}" aria-expanded="false">ⓘ</button></div>
       <div class="${x(sx.sparkwrap)}">${SNAP?spark(s.key,s.bands):`<svg class="${x(sx.spark,sx.sparkPh)}" aria-hidden="true"></svg>`}<span class="${x(sx.sc)}"><b ${c}>${SNAP?score.toFixed(0):"–"}</b>/100</span></div>
       <div class="${x(sx.info)}" hidden>${l.metric[s.key]||""}<span class="${x(sx.rd)}">${(l.read&&l.read[s.key])||""}</span></div>`;
     const btn=el.querySelector("button"),info=el.lastElementChild;
@@ -598,7 +611,8 @@ function drawChart(){
 
 /* ---------- shell: all markup lives here so every element gets its StyleX roles ---------- */
 const method=k=>`<details class="${x(sx.method)}"><summary class="${x(sx.summary)}" id="${k}-note-s"></summary><div class="${x(sx.note)}" id="${k}-note"></div></details>`;
-const fact=(id,wrap)=>`<div class="${x(sx.fact)}"${wrap?` id="${id}-wrap"`:""}><dt class="${x(sx.factDt)}" id="${id}-l"></dt><dd class="${x(sx.factDd)}" id="${id}">–</dd></div>`;
+/* a fact: label with its ⓘ, value, and the note the ⓘ opens (full width, under the row) */
+const fact=(id,wrap)=>`<div class="${x(sx.fact)}"${wrap?` id="${id}-wrap"`:""}><dt class="${x(sx.factDt)}"><span id="${id}-l"></span><button class="${x(sx.infoBtn,sx.factBtn)}" id="${id}-b" aria-expanded="false">ⓘ</button></dt><dd class="${x(sx.factDd)}" id="${id}">–</dd><dd class="${x(sx.info,sx.factInfo)}" id="${id}-i" hidden></dd></div>`;
 const shell=()=>`
 <header class="${x(sx.mast)}">
   <div class="${x(sx.ttl)}"><h1 class="${x(sx.h1)}">Bitcoin Accumulation</h1><div class="${x(sx.sub)}" id="m-sub"></div></div>
@@ -709,6 +723,8 @@ near("hxBox",()=>{hxNear=true;helixLoad();});near("ixBox",()=>{ixNear=true;ixLoa
 document.getElementById("cycRows").onclick=e=>{const b=e.target.closest("[data-w]");if(b)showOnHelix(...b.dataset.w.split(" "));};
 document.getElementById("hm").onclick=e=>{const c=e.target.closest("[data-ym]");if(c)showOnHelix(c.dataset.ym+"-01",c.dataset.ym+"-31");};
 document.getElementById("themeBtn").onclick=toggleTheme;
+for(const id of ["s-mom","s-rp","s-nupl"]){const b=document.getElementById(id+"-b"),i=document.getElementById(id+"-i");
+  b.onclick=()=>{const open=b.getAttribute("aria-expanded")!=="true";b.setAttribute("aria-expanded",open);i.hidden=!open;};}
 document.getElementById("langBtn").onclick=()=>setLang(LANG==="th"?"en":"th");
 document.getElementById("refresh").onclick=()=>load();
 document.getElementById("retry").onclick=()=>load(true);
