@@ -208,7 +208,7 @@ export const sx = stylex.create({
     paddingBlock: space.md, paddingInline: space.sm, transition: "color .18s, border-color .18s",
   },
   chartBox: { position: "relative", height: { default: 230, [mq.tablet]: 300, [mq.desktop]: 340 }, marginTop: space.md },
-  chartFail: { position: "absolute", inset: 0, display: "grid", placeItems: "center", margin: 0, padding: space.lg, ...FRAME_SOFT, fontSize: text.ui, lineHeight: 1.6, color: "var(--muted)", textAlign: "center" },
+  chartFail: { position: "absolute", inset: 0, display: "grid", placeItems: "center", alignContent: "center", gap: space.md, margin: 0, padding: space.lg, ...FRAME_SOFT, fontSize: text.ui, lineHeight: 1.6, color: "var(--muted)", textAlign: "center" },
 
   /* ---------- option rows (chart range, backtest horizon, DCA start): one style, left-aligned. Padding makes
      every target at least 44px wide; the negative margin lines the first label up with the text edge ---------- */
@@ -280,7 +280,16 @@ export const sx = stylex.create({
 
   /* ---------- 3D views (ADR-022, ADR-023): a WebGL canvas with HTML labels over it, drawn by /viz3d.js. Until it
      loads the box keeps its size; without WebGL it says so where the canvas would be ---------- */
-  v3Box: { position: "relative", overflow: "hidden", userSelect: "none", WebkitUserSelect: "none" },
+  // until its view is drawn (no data-state yet) a box is a chart skeleton: faint rules and the slow pulse, frozen and
+  // dimmed if the data failed. Ready, no-WebGL and failed-load boxes (data-state set) drop it
+  v3Box: {
+    position: "relative", overflow: "hidden", userSelect: "none", WebkitUserSelect: "none",
+    backgroundImage: { default: null, ":not([data-state])": "repeating-linear-gradient(transparent 0 calc(25% - 1px), var(--line-soft) calc(25% - 1px) 25%)" },
+    animationName: { default: null, ":not([data-state])": { default: pulse, [failed]: "none", [mq.reduce]: "none" } },
+    animationDuration: "1.2s", animationTimingFunction: "ease-in-out", animationIterationCount: "infinite", animationDirection: "alternate",
+    opacity: { default: null, [failed]: 0.5 },
+  },
+  v3Wait: { position: "absolute", inset: 0, display: "grid", placeItems: "center", margin: 0, padding: space.lg, fontSize: text.caption, color: "var(--faint)", textAlign: "center", pointerEvents: "none" },
   v3Hx: { height: { default: 340, [mq.tablet]: 420, [mq.desktop]: 460 } },
   v3Hm: { height: { default: 300, [mq.tablet]: 380, [mq.desktop]: 400 }, marginTop: space.md },
   v3Ix: { height: { default: 280, [mq.tablet]: 380, [mq.desktop]: 420 } },

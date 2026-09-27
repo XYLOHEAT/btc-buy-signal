@@ -111,6 +111,7 @@ function stage(o, fit, views, aim = () => 0) {
     ev.preventDefault(); cancelAnimationFrame(raf);
     az += k[0]; el = clampEl(el + k[1]); S.render();
   });
+  cv.addEventListener("webglcontextrestored", () => S.render()); // three.js rebuilds its state; draw again (on demand, nothing else would)
   new ResizeObserver(() => {
     w = cv.clientWidth; h = cv.clientHeight; if (!w || !h) return;
     renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();

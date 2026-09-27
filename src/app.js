@@ -58,7 +58,7 @@ const T={
   hxTip:(d,p,z,f)=>`${d} · ${p} · ${z} · ${f}% ของรอบ`,
   hxHint:"ลากเพื่อหมุน หรือใช้ปุ่มลูกศร · ชี้หรือแตะเส้นเพื่อดูวันที่และราคา",
   hxAria:"กราฟ 3 มิติ: ราคา BTC ทุกวันพันเป็นเกลียว หนึ่งรอบต่อหนึ่งช่วง halving ใช้ปุ่มลูกศรเพื่อหมุน",
-  v3Fail:"เบราว์เซอร์นี้แสดงภาพ 3 มิติไม่ได้ ข้อสรุปอยู่ด้านบน", barHint:"ลากเพื่อหมุน หรือใช้ปุ่มลูกศร · ชี้หรือแตะแท่งเพื่อดูค่า",
+  v3Fail:"เบราว์เซอร์นี้แสดงภาพ 3 มิติไม่ได้ ข้อสรุปอยู่ด้านบน", v3Wait:"กำลังโหลดภาพ 3 มิติ…", v3Net:"โหลดภาพ 3 มิติไม่สำเร็จ ตรวจสอบอินเทอร์เน็ตแล้วลองอีกครั้ง", barHint:"ลากเพื่อหมุน หรือใช้ปุ่มลูกศร · ชี้หรือแตะแท่งเพื่อดูค่า",
   hmV:["2 มิติ","3 มิติ"], hmAria:"ภาพ 3 มิติของคะแนนรายเดือน ความสูงของแท่งคือคะแนน ใช้ปุ่มลูกศรเพื่อหมุน", hmFail:"เบราว์เซอร์นี้แสดงภาพ 3 มิติไม่ได้ เลือก 2 มิติเพื่อดูตาราง",
   secIx:"6 ดัชนีย้อนหลัง · คะแนนรายเดือนของแต่ละดัชนี แท่งสูงคือถูก ช่วงที่ทุกแถวสูงพร้อมกันคือช่วงที่ดัชนีเห็นตรงกัน",
   ixV:["เอียง","มองจากบน"], ixRun:k=>` (ตอนนี้ต่อเนื่องมา ${k} เดือน)`, ixTip:(t,ym,s,z)=>`${t} · ${ym} · ${s} ${z}`,
@@ -122,7 +122,7 @@ const T={
   hxTip:(d,p,z,f)=>`${d} · ${p} · ${z} · ${f}% through its cycle`,
   hxHint:"Drag to turn, or use the arrow keys · point at or tap the line for the date and price",
   hxAria:"3D chart: every day's BTC price wound into a spiral, one turn per halving cycle. The arrow keys turn it.",
-  v3Fail:"This browser can't show the 3D view. The summary is above.", barHint:"Drag to turn, or use the arrow keys · point at or tap a bar for its value",
+  v3Fail:"This browser can't show the 3D view. The summary is above.", v3Wait:"Loading the 3D view…", v3Net:"The 3D view didn't load. Check your connection and try again.", barHint:"Drag to turn, or use the arrow keys · point at or tap a bar for its value",
   hmV:["2D","3D"], hmAria:"3D view of the monthly score: bar height is the score. The arrow keys turn it.", hmFail:"This browser can't show the 3D view. Choose 2D for the grid.",
   secIx:"The six indices over time · each index's monthly score; tall is cheap, and stretches where every row stands tall are when they agreed",
   ixV:["Tilted","From above"], ixRun:k=>` (the last ${k} months running)`, ixTip:(t,ym,s,z)=>`${t} · ${ym} · ${s} ${z}`,
@@ -263,8 +263,8 @@ function applyStaticLang(){const l=L();
   document.getElementById("hx-note").innerHTML=l.hxNote(monthYear(CYC[CYC.length-1]));
   head("lbl-ix",l.secIx);
   document.getElementById("toc-l").textContent=l.tocL;[...document.getElementById("tocLinks").children].forEach((a,i)=>a.textContent=l.toc[i]);document.getElementById("ix-note").innerHTML=l.ixNote;
-  for(const [k,hint,aria,fail] of [["hx",l.hxHint,l.hxAria,l.v3Fail],["hr",l.barHint,l.hmAria,l.hmFail],["ix",l.barHint,l.ixAria,l.v3Fail]]){
-    document.getElementById(k+"Hint").textContent=hint;document.getElementById(k+"Canvas").setAttribute("aria-label",aria);document.getElementById(k+"Fail").textContent=fail;}
+  for(const [k,hint,aria] of [["hx",l.hxHint,l.hxAria],["hr",l.barHint,l.hmAria],["ix",l.barHint,l.ixAria]]){
+    document.getElementById(k+"Hint").textContent=hint;document.getElementById(k+"Canvas").setAttribute("aria-label",aria);v3Msg(k);}
   document.getElementById("hxKey").innerHTML=zoneKey(sx.v3Swatch,true);document.getElementById("ixKey").innerHTML=zoneKey(sx.swatch);
   head("lbl-hm",l.secHm);
   document.getElementById("hmKey").innerHTML=Object.keys(BZ).map(k=>`<span class="${x(sx.keyItem)}"><i ${cellAttrs(k,false,sx.swatch)}></i>${l.zone[BZ[k]]}</span>`).join("")+
@@ -426,42 +426,65 @@ function hmShow(){
   const on=curHm==="3d";
   document.getElementById("hm").hidden=on;document.getElementById("hrBox").hidden=!on;document.getElementById("hrHint").hidden=!(on&&HR);
   if(!on||hrAsked||!HM)return;hrAsked=true;
-  need3d(V=>{
+  v3Load("hr",V=>{
     const{y0,y1,avg}=HM,rows=[],v=[],z=[],marks=[],yms=[];
     for(let y=y1;y>=y0;y--){rows.push(String(y));
       for(let m=1;m<=12;m++){const ym=y+"-"+String(m).padStart(2,"0"),a=avg[ym];
         if(a!==undefined&&HVYM.has(ym))marks.push(v.length);
         yms.push(ym);v.push(a??NaN);z.push(a===undefined?"none":band(a));}}
-    HR=v3Mount("hr",V&&V.bars,{rows,cols:Array.from({length:12},(_,i)=>String(i+1)),v,z,marks,size:[12,rows.length],fill:[.8,.8],views:{tilt:[.95,.35]},
+    HR=v3Mount("hr",V,"bars",{rows,cols:Array.from({length:12},(_,i)=>String(i+1)),v,z,marks,size:[12,rows.length],fill:[.8,.8],views:{tilt:[.95,.35]},
       tipText:k=>`${yms[k]} · ${hmTxt(yms[k],v[k])}`});
     hmShow();});
 }
 
-/* ---- 3D views (ADR-022, ADR-023). three.js lives in /viz3d.js, injected once, when the first view wants it.
-   V3: undefined until it has loaded or failed; null when it failed (no WebGL is found per view, in v3Mount) ---- */
+/* ---- 3D views (ADR-022, ADR-023, ADR-026). three.js lives in /viz3d.js, injected once, when the first view wants
+   it. Callbacks get the bundle, null if it loaded without BTC3D, or undefined if it didn't arrive (offline, blocked):
+   then V3 stays unset, so "try again" injects it afresh. No WebGL is found per view, in v3Mount ---- */
 let V3,v3q=[];
 function need3d(cb){
   if(V3!==undefined)return cb(V3);
   if(v3q.push(cb)>1)return;
-  const s=document.createElement("script"),done=()=>{V3=window.BTC3D||null;v3q.splice(0).forEach(f=>f(V3));};
-  s.src="viz3d.js?v=1";s.onload=s.onerror=done;document.head.appendChild(s);
+  const s=document.createElement("script"),flush=v=>v3q.splice(0).forEach(f=>f(v));
+  s.src="viz3d.js?v=2";
+  s.onload=()=>{V3=window.BTC3D||null;flush(V3);};
+  s.onerror=()=>{s.remove();flush(undefined);};
+  document.head.appendChild(s);
 }
 const v3Colors=()=>({...Object.fromEntries(Object.keys(BZ).map(k=>[k,tok("z-"+k)])),none:tok("faint"),sel:tok("btc")});
 const v3Grid=()=>({soft:tok("line"),strong:tok("faint")});
-/* one view into #<k>Canvas/Layer/Tip. Without WebGL (or the bundle) #<k>Fail says so and the view's controls, hint
-   and key go; captions and the 2D heatmap stay */
-function v3Mount(k,make,o){
+/* A view's box: no data-state while it waits (the skeleton, and #<k>Wait once its load has started), then "ready",
+   "nogl" (no WebGL: the view's controls, hint and key go; captions and the 2D heatmap stay) or "net" (the bundle
+   didn't arrive: #<k>Fail offers to try again). v3Load starts a load, v3Mount ends it */
+const V3RETRY={hx:()=>{hxAsked=false;helixLoad();},hr:()=>{hrAsked=false;hmShow();},ix:()=>{ixAsked=false;ixLoad();}};
+function v3Load(k,go){
+  const $=id=>document.getElementById(k+id);
+  $("Box").removeAttribute("data-state");$("Fail").hidden=true;$("Wait").hidden=false;
+  need3d(go);
+}
+function v3Mount(k,V,kind,o){
   const $=id=>document.getElementById(k+id);let api=null;
-  try{api=make&&make({canvas:$("Canvas"),layer:$("Layer"),tip:$("Tip"),palette:v3Colors(),grid:v3Grid(),
+  try{api=V&&V[kind]({canvas:$("Canvas"),layer:$("Layer"),tip:$("Tip"),palette:v3Colors(),grid:v3Grid(),
     cls:{label:x(sx.v3Label),strong:x(sx.v3Label,sx.v3Strong),now:x(sx.v3Label,sx.v3Now),dot:x(sx.v3Dot),mark:x(sx.v3Mark)},...o});}catch(e){}
-  if(!api){for(const id of ["Canvas","Views","Hint","Key"])if($(id))$(id).hidden=true;$("Fail").hidden=false;}
+  $("Box").dataset.state=api?"ready":V===undefined?"net":"nogl";$("Wait").hidden=true;$("Fail").hidden=!!api;
+  for(const id of ["Canvas","Views","Hint","Key"])if($(id))$(id).hidden=!api;
+  v3Msg(k);
+  if(api)for(const j in V3RETRY)if(j!==k&&document.getElementById(j+"Box").dataset.state==="net")V3RETRY[j](); // the bundle is here now: the others stop failing too
   return api;
 }
-/* a 3D box: the canvas (focusable: the arrow keys turn it), the label layer, the tooltip, the failure note */
-const box3d=(k,h,desc,hide)=>`<div class="${x(sx.v3Box,h,sx.skChart)}" id="${k}Box"${hide?" hidden":""}>
+/* the box's words for its state, in the current language */
+function v3Msg(k){
+  const l=L(),f=document.getElementById(k+"Fail");
+  document.getElementById(k+"Wait").textContent=l.v3Wait;
+  if(document.getElementById(k+"Box").dataset.state!=="net"){f.textContent=k==="hr"?l.hmFail:l.v3Fail;return;}
+  const b=document.createElement("button");b.className=x(sx.cbtn,sx.retry);b.textContent=l.retry;b.onclick=V3RETRY[k];
+  f.textContent=l.v3Net+" ";f.append(b);
+}
+/* a 3D box: the canvas (focusable: the arrow keys turn it), the label layer, the tooltip, the loading and failure notes */
+const box3d=(k,h,desc,hide)=>`<div class="${x(sx.v3Box,h)}" id="${k}Box"${hide?" hidden":""}>
       <canvas class="${x(sx.v3Canvas)}" id="${k}Canvas" role="img" tabindex="0" aria-describedby="${desc}"></canvas>
       <div class="${x(sx.v3Layer)}" id="${k}Layer" aria-hidden="true"></div>
       <div class="${x(sx.v3Tip)}" id="${k}Tip" aria-hidden="true" hidden></div>
+      <p class="${x(sx.v3Wait)}" id="${k}Wait" hidden></p>
       <p class="${x(sx.chartFail)}" id="${k}Fail" hidden></p>
     </div>`;
 const zoneKey=(role,none)=>[...Object.keys(BZ).map(k=>[`var(--z-${k})`,L().zone[BZ[k]]]),...(none?[["var(--faint)",L().hxNone]]:[])]
@@ -499,8 +522,8 @@ function renderHelix(){
 }
 function helixLoad(){
   if(hxAsked||!hxNear||!COMP)return;hxAsked=true;
-  need3d(V=>{const h=hxD=helixData();
-    HX=v3Mount("hx",V&&V.helix,{turn:h.turn,p:h.p,z:h.z,marks:h.marks,view:curView,text:hxText(),
+  v3Load("hx",V=>{const h=hxD=helixData();
+    HX=v3Mount("hx",V,"helix",{turn:h.turn,p:h.p,z:h.z,marks:h.marks,view:curView,text:hxText(),
       tipText:i=>{const l=L();return l.hxTip(h.d[i],usdP(h.p[i]),h.z[i]==="none"?l.hxNone:l.zone[BZ[h.z[i]]],Math.round(h.turn[i]%1*100));}});
     hxFocus();});
 }
@@ -540,8 +563,8 @@ function renderIndices(){
 }
 function ixLoad(){
   if(ixAsked||!ixNear||!COMP)return;ixAsked=true;
-  need3d(V=>{const I=Indicators.INDICES,{ms,C,v}=ixData();
-    IX=v3Mount("ix",V&&V.bars,{rows:I.map(short),cols:ms.map(m=>m.endsWith("-01")?m.slice(0,4):""),v,z:v.map(s=>Number.isFinite(s)?band(s):"none"),marks:[],
+  v3Load("ix",V=>{const I=Indicators.INDICES,{ms,C,v}=ixData();
+    IX=v3Mount("ix",V,"bars",{rows:I.map(short),cols:ms.map(m=>m.endsWith("-01")?m.slice(0,4):""),v,z:v.map(s=>Number.isFinite(s)?band(s):"none"),marks:[],
       size:[innerWidth<640?15:24,9] /* ponytail: phones get a narrower field, chosen once at mount; turning the phone keeps it */,fill:[1,.5],height:2,views:{tilt:[.95,.4],top:[1.52,0]},view:curIx,
       tipText:k=>{const l=L(),s=v[k];return l.ixTip(short(I[Math.floor(k/C)]),ms[k%C],Math.round(s),l.zone[BZ[band(s)]]);}});});
 }
