@@ -30,7 +30,8 @@ const segs = (list) => new BufferGeometry().setAttribute("position", new Float32
 /* One canvas: the renderer; a camera orbiting the centre at a fixed distance, so turning never zooms (fit(half
    vertical fov, half horizontal fov, canvas width) -> distance); drag and arrow keys; named views [elevation, turn]; HTML labels
    pinned to 3D points (crisp text in the page's font); a tooltip. The content fills `scene` and sets
-   `pick(x, y, ndcX, ndcY) -> {i, p} | null`; `before()` runs ahead of each frame */
+   `pick(x, y, ndcX, ndcY) -> {i, p} | null`; `before()` runs ahead of each frame. o.onTurn() fires when the reader
+   turns the view by hand (drag or arrow keys), so app.js can release its view buttons */
 function stage(o, fit, views, aim = () => 0) {
   let renderer;
   try { renderer = new WebGLRenderer({ canvas: o.canvas, antialias: true, alpha: true }); }
@@ -55,13 +56,13 @@ function stage(o, fit, views, aim = () => 0) {
     return v.z < 1 && Math.abs(v.x) <= 1.05 && Math.abs(v.y) <= 1.05 && [((v.x + 1) / 2) * w, ((1 - v.y) / 2) * h];
   };
   const put = (e, xy, shift = "") => { e.hidden = !xy; if (xy) e.style.transform = `translate(${xy[0]}px,${xy[1]}px)${shift}`; };
-  const tipDot = add(o.cls.dot), hideTip = () => { o.tip.hidden = tipDot.hidden = true; };
+  const tipDot = add(o.cls.dot), hideTip = () => { o.tip.hidden = tipDot.hidden = true; }, turned = () => o.onTurn && o.onTurn();
   S.tip = (i, p) => {
     const xy = S.project(p), t = o.tip;
     if (!xy) return hideTip();
     t.textContent = o.tipText(i); t.hidden = tipDot.hidden = false;
     const tw = t.offsetWidth, th = t.offsetHeight;
-    put(t, [Math.max(0, Math.min(w - tw, xy[0] - tw / 2)), xy[1] - th - 12 < 0 ? xy[1] + 12 : xy[1] - th - 12]);
+    put(t, [Math.max(0, Math.min(w - tw, xy[0] - tw / 2)), Math.max(0, Math.min(h - th, xy[1] - th - 12 < 0 ? xy[1] + 12 : xy[1] - th - 12))]); // inside the box, which clips
     put(tipDot, xy);
   };
 
@@ -96,8 +97,8 @@ function stage(o, fit, views, aim = () => 0) {
   cv.addEventListener("pointermove", (ev) => {
     if (!drag) return point(ev);
     const dx = ev.clientX - drag.x, dy = ev.clientY - drag.y;
-    if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 5) return;
-    drag.moved = true; cancelAnimationFrame(raf);
+    if (!drag.moved) { if (Math.abs(dx) + Math.abs(dy) < 5) return; drag.moved = true; turned(); }
+    cancelAnimationFrame(raf);
     az = drag.az - dx * 0.008;
     if (!drag.touch) el = clampEl(drag.el + dy * 0.006);
     S.render();
@@ -108,7 +109,7 @@ function stage(o, fit, views, aim = () => 0) {
   cv.addEventListener("keydown", (ev) => {
     const k = { ArrowLeft: [0.2, 0], ArrowRight: [-0.2, 0], ArrowUp: [0, 0.15], ArrowDown: [0, -0.15] }[ev.key];
     if (!k) return;
-    ev.preventDefault(); cancelAnimationFrame(raf);
+    ev.preventDefault(); cancelAnimationFrame(raf); turned();
     az += k[0]; el = clampEl(el + k[1]); S.render();
   });
   cv.addEventListener("webglcontextrestored", () => S.render()); // three.js rebuilds its state; draw again (on demand, nothing else would)
@@ -157,6 +158,7 @@ function helix(o) {
   // a chosen stretch (app.js: a similar period, a heatmap month), over everything, in the selection color
   const selMat = new LineMaterial({ linewidth: 4, depthTest: false });
   let sel = null;
+  const drop = () => { if (sel) { S.scene.remove(sel); sel.geometry.dispose(); sel = null; } };
   S.mats.push(lineMat, selMat);
   S.scene.add(new Line2(lineGeo, lineMat));
 
@@ -196,13 +198,15 @@ function helix(o) {
     view: S.view,
     /* light days i0..i1 and turn them to face the camera, then show the middle day */
     focus(i0, i1) {
-      if (sel) { S.scene.remove(sel); sel.geometry.dispose(); }
+      drop();
       sel = new Line2(new LineGeometry().setPositions(pos.subarray(i0 * 3, (i1 + 1) * 3)), selMat);
       sel.renderOrder = 1;
       S.scene.add(sel);
       const mid = (i0 + i1) >> 1;
       S.go([VIEWS.tilt[0], Math.PI - o.turn[mid] * TAU], () => S.tip(mid, p3(mid)));
     },
+    /* take the chosen stretch away */
+    clear() { drop(); S.render(); },
     /* palette: zone key -> CSS color ("none": days without a score, "sel": the chosen stretch); grid: { soft, strong } */
     setTheme(pal, grid) {
       const c = colors(pal), cols = new Float32Array(n * 3);

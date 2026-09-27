@@ -309,11 +309,16 @@ export const sx = stylex.create({
   v3Now: { fontWeight: 600, color: "var(--ink)" },
   v3Dot: { position: "absolute", left: 0, top: 0, width: 9, height: 9, margin: -4.5, borderRadius: "50%", backgroundColor: "var(--ink)", boxShadow: "0 0 0 2px var(--bg)" },
   v3Mark: { position: "absolute", left: 0, top: 0, width: 5, height: 5, margin: -2.5, borderRadius: "50%", backgroundColor: "var(--bg)" }, // a halving month, as in the 2D grid
+  // one line when it fits; a long one (English on a phone) wraps inside the box instead of running past its edge
   v3Tip: {
-    position: "absolute", left: 0, top: 0, pointerEvents: "none", whiteSpace: "nowrap",
+    position: "absolute", left: 0, top: 0, pointerEvents: "none", maxWidth: "min(100%, 22rem)", textWrap: "balance",
     fontSize: text.caption, lineHeight: 1.4, color: "var(--ink)", backgroundColor: "var(--surface)", ...FRAME, paddingBlock: space.xs, paddingInline: space.sm,
   },
   v3Hint: { marginTop: space.sm, fontSize: text.caption, color: "var(--faint)" },
+  // what's highlighted on the spiral, then the option-row button that clears it
+  // the button's own padding is pulled back, so on a line of its own its label lines up with the text edge
+  v3Sel: { display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: space.sm, marginTop: space.xs, fontSize: text.ui, color: "var(--muted)" },
+  v3SelX: { marginLeft: `calc(-1 * ${space.md})` },
   v3Swatch: { flex: "0 0 auto", width: 14, height: 3 }, // a piece of the spiral's line
   // a similar period's date: a button that shows it on the spiral. Its padding fills the cell, so the target is the row's height
   cycBtn: {
